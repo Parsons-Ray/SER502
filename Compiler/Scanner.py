@@ -17,6 +17,7 @@ import pyparsing as pp
 # print declaration.parseString("integer a := 10, \n b := 15, c:=20, d.")
 #
 
+global sequenceOfStatements
 
 eol = pp.Literal(".")
 assign = pp.Literal(":=")
