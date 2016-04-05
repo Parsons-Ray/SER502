@@ -29,18 +29,21 @@ binaryAddingOperator = pp.Or(plus ^ minus)
 relationalOperator = pp.Or(
     pp.Literal("==") ^ pp.Literal("!=") ^ pp.Literal("<") ^ pp.Literal(">") ^ pp.Literal("<=") ^ pp.Literal(">="))
 multiplyingOperator = pp.Or(pp.Literal("*") ^ pp.Literal("/"))
-
+# Made Change here
 simpleStatement = pp.Forward()
-
 compoundStatement = pp.Forward()
-
-primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false"))
+expr = pp.Forward()
+actualParameter = pp.Or(numericLiteral ^ identifier ^ expr)
+functionCallExpression = identifier + lBracs + actualParameter + rBracs
+functionCallStatement = functionCallExpression + eol
+primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false") ^ functionCallExpression)
+# Made Change here
 factor = pp.Or((primary + pp.Optional(pp.Literal("^") + primary)) ^ (notExpr + primary))
 term = factor + pp.ZeroOrMore(multiplyingOperator + factor)
 simpleExpression = pp.Optional(unaryAddingOperator) + term + pp.ZeroOrMore(binaryAddingOperator + term)
 relation = simpleExpression + pp.ZeroOrMore(
     pp.Or(pp.Literal(",") + simpleExpression ^ relationalOperator + simpleExpression))
-expr = relation + pp.ZeroOrMore(pp.Or((pp.Literal("AND") + relation) ^ (pp.Literal("OR") + relation)))
+expr << relation + pp.ZeroOrMore(pp.Or((pp.Literal("AND") + relation) ^ (pp.Literal("OR") + relation)))
 indexedComponent = pp.Literal("[") + (expr + pp.ZeroOrMore("," + expr)) + pp.Literal("]")
 name = pp.Or(identifier ^ indexedComponent)
 condition = expr
@@ -48,7 +51,7 @@ typeName = pp.Or(pp.Literal("integer") ^ pp.Literal("floating") ^ pp.Literal("bo
 ArrayTypeDefinition = pp.Literal("Array") + typeName + pp.Literal("[") + (
     size + pp.ZeroOrMore(pp.Literal(",") + size)) + pp.Literal("]")
 typeDefinition = pp.Or(typeName ^ ArrayTypeDefinition)
-actualParameter = pp.Or(numericLiteral ^ identifier)
+
 formalParameters = typeDefinition + identifier + pp.ZeroOrMore(commaLit + typeDefinition + identifier)
 
 returnStatement = pp.Literal("return") + relation + eol
@@ -57,8 +60,6 @@ printStatement = pp.Literal("print") + expr + eol
 
 declarativeStatement = typeDefinition + identifier + pp.Optional(assign + expr) + pp.ZeroOrMore(
     pp.Literal(",") + identifier + pp.Optional(assign + expr)) + eol
-
-functionCallStatement = identifier + rBracs + actualParameter + lBracs + eol
 
 assignmentStatement = identifier + pp.Optional(lsqBracs + numericLiteral + rsqBracs) + assign + expr + eol
 
@@ -81,5 +82,3 @@ program = sequenceOfStatements
 
 print program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
 
-# Fails :  factVal := fact * factorial ( fact - 1 )
-# Success : factVal := fact * 1
