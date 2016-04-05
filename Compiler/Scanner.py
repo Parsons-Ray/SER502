@@ -20,6 +20,7 @@ import pyparsing as pp
 global sequenceOfStatements
 
 eol = pp.Literal(".")
+commaLit = pp.Literal(",")
 assign = pp.Literal(":=")
 lsqBracs = pp.Literal("[")
 rsqBracs = pp.Literal("]")
@@ -59,10 +60,19 @@ typeName = pp.Or(pp.Literal("integer") ^ pp.Literal("floating") ^ pp.Literal("bo
 ArrayTypeDefinition = pp.Literal("Array") + typeName + pp.Literal("[") + (size + pp.ZeroOrMore(pp.Literal(",") + size))+ pp.Literal("]")
 typeDefinition = pp.Or(typeName ^ ArrayTypeDefinition)
 declarativeStatement = typeDefinition + identifier + pp.Optional( assign + expr) + pp.ZeroOrMore(pp.Literal(",") + identifier + pp.Optional( assign + expr)) + eol
-# functionCallStatement =
+
+#Functions - Kevin's part
+#Some things I changed from grammer.txt:
+    #1. I made the formal Parameters Optional incase you want to declare a function where no options are being passed into it.
+    #2. changed 'sequenceOfStatements' in the function body to an 'or' between compount and simple statements.
+        #This make is so you can do simple statemenst along with if/while loops but you can not declare a function within a function
+formalParameters = typeDefinition + identifier + pp.ZeroOrMore(commaLit + typeDefinition + identifier)
+functionSpecification = pp.Keyword("function") +  identifier + pp.Literal("->") + typeDefinition + lBracs + pp.Optional(formalParameters) + rBracs + lcrBracs + pp.Or(simpleStatement ^ compoundStatement) + rcrBracs
+actualParameter = numericLiteral ^ identifier
+functionCallStatement = identifier + rBracs + actualParameter + lBracs + eol
+
 assignmentStatement = identifier + pp.Optional(lsqBracs + numericLiteral + rsqBracs) + assign + expr + eol
 nullStatement = pp.Literal("none")
-# compoundStatement =
 # DOUBT : expression = pp.Optional(lsqBracs) +  + pp.Optional(rcrBracs) + pp.Or(pp.ZeroOrMore(andExpr + relation) ^ pp.ZeroOrMore(orExpr + relation))
 # Changed expression from relation ({ "AND" relation } | { "OR" relation }) | "[" relation "]" to ["["] + relation + ["]"] {"AND" relation } | { "OR" relation }
 condition = expr

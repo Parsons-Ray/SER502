@@ -17,7 +17,7 @@ sequenceOfStatements -> statement { statement }
 
 statement -> simpleStatement | compoundStatement |functionSpecification
 
-functionSpecification -> "function" identifier "->" typeDefinition (" formalParameters ")" "{" sequenceOfStatements "}"
+functionSpecification -> "function" identifier "->" typeDefinition “(“ [formalParameters] ")" "{" sequenceOfStatements "}"
 
 formalParameters -> typeDefinition identifier { "," typeDefinition identifier }
 
