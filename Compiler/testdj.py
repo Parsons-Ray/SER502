@@ -52,8 +52,6 @@ actualParameter = pp.Or(numericLiteral ^ identifier)
 formalParameters = typeDefinition + identifier + pp.ZeroOrMore(commaLit + typeDefinition + identifier)
 
 returnStatement = pp.Literal("return") + relation + eol
-# Success till : returnStatement = pp.Literal("return") + simpleExpression + eol
-# But Error :  returnStatement = pp.Literal("return") + relation + eol
 
 printStatement = pp.Literal("print") + expr + eol
 
@@ -81,8 +79,7 @@ statement = pp.Or(simpleStatement ^ functionSpecification ^ compoundStatement)
 sequenceOfStatements << pp.OneOrMore(statement)
 program = sequenceOfStatements
 
-print program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * "
-                          "factorial ( fact -1 ). \n  return factVal .}")
+print program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
 
-# Fails :  returnStatement = pp.Literal("return") + expr + eol
-# Success : returnStatement = pp.Literal("return") + identifier + eol
+# Fails :  factVal := fact * factorial ( fact - 1 )
+# Success : factVal := fact * 1
