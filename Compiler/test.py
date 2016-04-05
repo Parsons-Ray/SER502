@@ -42,7 +42,7 @@ def simpleExpression():
     return pp.Optional(unaryAddingOperator) + term() + pp.ZeroOrMore(binaryAddingOperator + term())
 
 def relation():
-    return simpleExpression() + pp.ZeroOrMore(pp.Or(pp.Literal(",") + simpleExpression()) ^ (relationalOperator + simpleExpression()))
+    return simpleExpression() + pp.ZeroOrMore(pp.Or(pp.Literal(",") + simpleExpression() ^ (relationalOperator + simpleExpression())))
 
 
 def expr():
@@ -64,7 +64,7 @@ ArrayTypeDefinition = pp.Literal("Array") + typeName + pp.Literal("[") + (size +
 typeDefinition = pp.Or(typeName ^ ArrayTypeDefinition)
 actualParameter =  pp.Or(numericLiteral ^ identifier)
 formalParameters = typeDefinition + identifier + pp.ZeroOrMore(commaLit + typeDefinition + identifier)
-returnStatement = pp.Literal("return") + expr()
+returnStatement = pp.Literal("return") + expr() + eol
 
 printStatement = pp.Literal("print") + expr()
 

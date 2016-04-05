@@ -34,13 +34,12 @@ simpleStatement = pp.Forward()
 
 compoundStatement = pp.Forward()
 
-
 primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false"))
 factor = pp.Or((primary + pp.Optional(pp.Literal("^") + primary)) ^ (notExpr + primary))
 term = factor + pp.ZeroOrMore(multiplyingOperator + factor)
 simpleExpression = pp.Optional(unaryAddingOperator) + term + pp.ZeroOrMore(binaryAddingOperator + term)
 relation = simpleExpression + pp.ZeroOrMore(
-        pp.Or(pp.Literal(",") + simpleExpression) ^ (relationalOperator + simpleExpression))
+    pp.Or(pp.Literal(",") + simpleExpression ^ relationalOperator + simpleExpression))
 expr = relation + pp.ZeroOrMore(pp.Or((pp.Literal("AND") + relation) ^ (pp.Literal("OR") + relation)))
 indexedComponent = pp.Literal("[") + (expr + pp.ZeroOrMore("," + expr)) + pp.Literal("]")
 name = pp.Or(identifier ^ indexedComponent)
@@ -82,7 +81,8 @@ statement = pp.Or(simpleStatement ^ functionSpecification ^ compoundStatement)
 sequenceOfStatements << pp.OneOrMore(statement)
 program = sequenceOfStatements
 
-print program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . return factVal .}")
+print program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * "
+                          "factorial ( fact -1 ). \n  return factVal .}")
 
 # Fails :  returnStatement = pp.Literal("return") + expr + eol
 # Success : returnStatement = pp.Literal("return") + identifier + eol
