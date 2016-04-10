@@ -80,5 +80,5 @@ statement = pp.Or(simpleStatement ^ functionSpecification ^ compoundStatement)
 sequenceOfStatements << pp.OneOrMore(statement)
 program = sequenceOfStatements
 
-print program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
-
+result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
+print result
