@@ -1,0 +1,29 @@
+- - - - - - - - - - Declaration and assignment - - - - - - - - - -
+#Sample High Level Code:
+
+  integer a, b := 10.
+
+  #Should Be translated to:
+
+    TYP
+    VAR a b
+    EQL 10
+    EOL
+
+    #Which tokenizes to: ["TYP", "VAR", "a", "b", "EQL", "10", "EOL"]
+
+
+- - - - - - - - - - Function Declaration - - - - - - - - - - - -
+#Sample High Level Code:
+
+  function sampleFunction->integer(integer param1, bool param2){
+  ....
+  return x.
+  }
+
+  #Should be translated to:
+
+    FUN integer sampleFunction        #using 'integer' so we can push it onto stack and check return type at end.
+    PAR param1 param2
+
+    #hmmm not sure about this function stuff
