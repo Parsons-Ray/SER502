@@ -1,6 +1,14 @@
 __author__ = 'Digant'
 import pyparsing as pp
 
+def writeFile(my_list):
+    # Append to file
+    with open("Intermediate.sdk", 'w') as f:
+        f.write("STRT" + '\n')
+        for s in my_list[0]:
+            f.write(s + '\n')
+        f.write("END" + '\n')
+
 
 def parseSDK(input):
     # Global Variable Setting
@@ -198,8 +206,7 @@ def convertTokens(tokenizedInput):
         if value != '.':
             if value in typeName:
                 tokenizedOutput.append(declaration(tokenizedInputIter, value))
-
-        return tokenizedOutput
+    return tokenizedOutput
 
 
 def main():
@@ -223,7 +230,7 @@ def main():
 
 
     # Writing TokenizedOutput to file
-    print convertTokens(tokenizedInput)
+    writeFile(convertTokens(tokenizedInput))
 
 
 if __name__ == "__main__":
