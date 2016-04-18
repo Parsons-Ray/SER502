@@ -1,15 +1,15 @@
 __author__ = 'Digant'
 import pyparsing as pp
 
+# Writing to Intermediate Intermediate.sdk file
 def writeFile(my_list):
-    # Append to file
     with open("Intermediate.sdk", 'w') as f:
         f.write("STRT" + '\n')
         for s in my_list[0]:
             f.write(s + '\n')
         f.write("END" + '\n')
 
-
+# Process : Scanner/Parser to generate Tokenized Output
 def parseSDK(input):
     # Global Variable Setting
     global eol
@@ -24,7 +24,6 @@ def parseSDK(input):
     global elsevar
     global typeName
 
-    # Process : Scanner/Parser to generate Tokenized Output
     eol = pp.Literal(".")
     commaLit = pp.Literal(",")
     assign = pp.Literal(":=")
@@ -125,7 +124,6 @@ def checkBool(l):
 
 # Declaration Translator
 def declaration(tokenizedInput, value):
-    print "Decalaration Statement \n"
     intermediateOutput = list()
     if value == "integer":
         nextValue = next(tokenizedInput)
@@ -183,9 +181,8 @@ def declaration(tokenizedInput, value):
         intermediateOutput.append("SDK ERROR : Next Value = " + nextValue)
     return intermediateOutput
 
-
+# Process : Tokenized Parsed String to Assembly Conversion
 def convertTokens(tokenizedInput):
-    # Process : Tokenized Parsed String to Assembly Conversion
 
     # Building an Iterator on "result" variable
     numItems = len(tokenizedInput)
