@@ -1,0 +1,8 @@
+STRT
+TYP INT a
+a EQL NULL
+TYP INT b
+b EQL 10
+TYP INT c
+c EQL 20
+END
