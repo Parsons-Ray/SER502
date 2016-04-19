@@ -5,8 +5,11 @@ import pyparsing as pp
 def writeFile(my_list):
     with open("Intermediate.sdk", 'w') as f:
         f.write("STRT" + '\n')
-        for s in my_list[0]:
-            f.write(s + '\n')
+        index = 0
+        while index <= len(my_list) - 1:
+            for s in my_list[index]:
+                f.write(s + '\n')
+            index += 1
         f.write("END" + '\n')
 
 # Process : Scanner/Parser to generate Tokenized Output
@@ -137,7 +140,7 @@ def declaration(tokenizedInput, value):
                     if checkInt(nextValue):
                         intermediateOutput.append(prevValue + " EQL " + nextValue)
                         nextValue = next(tokenizedInput)
-                elif nextValue == commaLit:
+                elif nextValue == commaLit or nextValue == eol:
                     intermediateOutput.append(prevValue + " EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
@@ -154,7 +157,7 @@ def declaration(tokenizedInput, value):
                     if checkFloat(nextValue):
                         intermediateOutput.append(prevValue + " EQL " + nextValue)
                         nextValue = next(tokenizedInput)
-                elif nextValue == commaLit:
+                elif nextValue == commaLit or nextValue == eol:
                     intermediateOutput.append(prevValue + " EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
@@ -171,11 +174,10 @@ def declaration(tokenizedInput, value):
                     if checkBool(nextValue):
                         intermediateOutput.append(prevValue + " EQL " + nextValue)
                         nextValue = next(tokenizedInput)
-                elif nextValue == commaLit:
+                elif nextValue == commaLit or nextValue == eol:
                     intermediateOutput.append(prevValue + " EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
-
     # Return Error
     if nextValue != ".":
         intermediateOutput.append("SDK ERROR : Next Value = " + nextValue)
@@ -201,8 +203,10 @@ def convertTokens(tokenizedInput):
         # c EQL 20
         # EOL
         if value != '.':
+            #Declaration Call
             if value in typeName:
                 tokenizedOutput.append(declaration(tokenizedInputIter, value))
+    print tokenizedOutput
     return tokenizedOutput
 
 
@@ -225,7 +229,7 @@ def main():
     # print result
     # ['function', 'factorial', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
 
-
+    print tokenizedInput
     # Writing TokenizedOutput to file
     writeFile(convertTokens(tokenizedInput))
 
