@@ -68,7 +68,7 @@ declarativeStatement = typeDefinition + identifier + pp.Optional( assign + expr)
         #This make is so you can do simple statemenst along with if/while loops but you can not declare a function within a function
 formalParameters = typeDefinition + identifier + pp.ZeroOrMore(commaLit + typeDefinition + identifier)
 functionSpecification = pp.Keyword("function") +  identifier + pp.Literal("->") + typeDefinition + lBracs + pp.Optional(formalParameters) + rBracs + lcrBracs + pp.Or(simpleStatement ^ compoundStatement) + rcrBracs
-actualParameter = numericLiteral ^ identifier
+actualParameter = numericLiteral ^ identifier ^ expr
 functionCallStatement = identifier + rBracs + actualParameter + lBracs + eol
 
 assignmentStatement = identifier + pp.Optional(lsqBracs + numericLiteral + rsqBracs) + assign + expr + eol

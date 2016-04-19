@@ -1,67 +1,55 @@
-#Classes we will need
-class Stack:
-     def __init__(self):
-         self.items = []
-
-     def isEmpty(self):
-         return self.items == []
-
-     def push(self, item):
-         self.items.append(item)
-
-     def pop(self):
-         return self.items.pop()
-
-     def peek(self):
-         return self.items[len(self.items)-1]
-
-     def size(self):
-         return len(self.items)
-
-class Queue:
-    def __init__(self, values):
-        self.items = values
-
-    def isEmpty(self):
-        return self.items == []
-
-    def enqueue(self, item):
-        self.items.insert(0,item)
-
-    def dequeue(self):
-        return self.items.pop()
-
-    def size(self):
-        return len(self.items)
-
-    def peek(self):
-        return self.items[-1]
+from classes import *
 
 #Globals
-
 #highlevel code looks like:
-    #integer a, b := 10.
-tokens = Queue(["TYP", "VAR", "a", "b", "EQL", "10", "EOL"][::-1])#reverse for the queue
-varDict = {}#this contains all our variables and their values
+    #integer a, b := 10, c:=20.
+#tokens = Iterator(["TYP", "INT", "a", "a", "EQL", "NULL", "TYP", "INT", "b", "b", "EQL", "10", "TYP", "INT", "c", "c", "EQL", "20", "EOL"])
+tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
+varDict = {} #this contains all our variables and their values
 stack = Stack()
 
 def TYP():
-    stack.push(tokens.dequeue()) #pushes "VAR" onto stack
-    while tokens.peek() is not "EQL": #push all the identifiers onto the stack
-        stack.push(tokens.dequeue())
-    tokens.dequeue()#remove "EQL"
-    value = tokens.dequeue() #this is "10" in our sample case.
+    #create varaible
+    while (tokens.next() is not "EOL"): #this should also pop off "TYP" along with "EOL"
+        stack.push(tokens.next()) #pushes "INT, FLT, BOOL" onto stack
+        varID = tokens.next() #variable identifier ("a", "b", "c")
+        varDict[varID] = Variable() #create varaibale object in map
+        varDict[varID].setValueType(stack.pop())
+        tokens.next() #remove the extra identifier ("a", "b", "c")
+        tokens.next()#remove "EQL"
+        varDict[varID].setValue(tokens.next())
 
-    while stack.peek() is not "VAR": #pop off all the variable identifiers and assign their value.
-        varDict[stack.pop()] = value
-    stack.pop() #pop off "VAR"
-    tokens.dequeue() #dequeue "EOL"
-
-def main():
-    nextToken = tokens.dequeue()
-    if nextToken is "TYP":
-        TYP()
+def FUN():
+    tokens.next()#pop FUN
+    name = tokens.next() #name of function
+    currentFunction = Function(tokens.next()) #return type
+    while (tokens.next() is "PAR"):
+        currentFunction.addParam(tokens.next(), tokens.next())
+    tokens.next() #pop off "STRT"
+    currentFunction.startPC = tokens.counter
+    varDict[name] = currentFunction
     print(varDict)
 
+
+def main():
+    nextToken = tokens.current()
+    if nextToken is "TYP":
+        TYP()
+    elif nextToken is "FUN":
+        FUN()
 #Call the main method. Starts runtime.
 main()
+
+# FUN sampleFunction INT        #using 'integer' so we can push it onto stack and check return type at end.
+#     PAR INT param1
+#     PAR BOOL param2
+#     STRT
+#       TYP INT x
+#       x EQL 10
+#       TYP INT y
+#       y EQL 20
+#       EOL
+#       TYP INT z
+#       z EQL x y ADD
+#       RTRN z
+#     END
