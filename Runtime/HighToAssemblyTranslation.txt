@@ -1,0 +1,104 @@
+- - - - - - - - - - Declaration and assignment - - - - - - - - - -
+#Sample High Level Code:
+
+  integer a, b := 10, c := 20.
+
+  #Should Be translated to:
+
+    TYP INT a
+    EQL NULL
+    TYP INT b
+    b EQL 10
+    TYP INT c
+    c EQL 20
+    EOL
+
+    #Which tokenizes to: ["TYP", "VAR", "a", "b", "EQL", "10", "EOL"]
+
+
+- - - - - - - - - - Function Declaration - - - - - - - - - - - -
+#Sample High Level Code:
+
+  function sampleFunction->integer(integer param1, bool param2){
+    integer x := 10, y := 20.
+    integer z := x + y
+    return z.
+  }
+
+  #Should be translated to:
+
+    FUN sampleFunction INT        #using 'integer' so we can push it onto stack and check return type at end.
+    PAR INT param1
+    PAR BOOL param2
+    STRT
+      TYP INT x
+      x EQL 10
+      TYP INT y
+      y EQL 20
+      EOL
+      TYP INT z
+      z EQL x y ADD
+      RTRN z
+    END
+
+- - - - - - - - - - Function Call - - - - - - - - - - - -
+#Sample High Level Code:
+
+  sampleFunction(x, y).
+
+  #Should be translated to:
+
+    CALL sampleFunction
+    PAR x y
+    EOL
+
+- - - - - - - - - - When Statement - - - - - - - - - - - -
+#Sample High Level Code:
+
+  when((a > 20) && ((a < 30) || (a <= 25)){
+
+  }else when(a == b){
+
+  }else{
+
+  }
+
+  #Should be translated to:
+
+    WHEN
+    COND a 20 GRT a 30 LT a 25 LTE OR AND
+    STRT
+      *leaving empty for now
+    END
+    EWHEN
+    COND a EEQL b
+    STRT
+      *leaving empty for now
+    END
+    ELSE
+    STRT
+      *leaving empty for now
+    END
+    ENDW
+- - - - - - - - - - loop Statement - - - - - - - - - - - -
+#Sample High Level Code:
+
+  loop ((a < 50) || (b >10)){
+
+    when (a == 45){
+      break.
+    }
+  }
+
+  #Should be translated to:
+
+    LOOP
+    COND a 50 LT b 10 GT OR
+    STRT
+      WHEN
+      COND a 45 EEQL
+      START
+      BREAK
+      END
+      ENDW
+    END
