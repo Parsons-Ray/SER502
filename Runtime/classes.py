@@ -93,3 +93,15 @@ class Function:
 
     def __repr__(self):
         return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
+
+
+class Label:
+
+    def __init__(self, name):
+        self.name = name
+        self.lSymbolTab = {}
+        self.lInstrQueue =  []
+        self.precedSymTab = {}
+
+    def setSymbolTable(self, symbolTable):
+        self.precedSymTab = symbolTable
