@@ -9,7 +9,7 @@ import re
 tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
 glbl_vardict = {} #this contains all our variables and their values
 glbl_labeldict = {} #this contains all the labels and lines inside them
-curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PLUS", "res", "1", "MOV", "res", "Register_Add", "EOL" , "END"])
+curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PLUS", "res", "1", "MOV", "res", "Register_Add", "EOL" , "LEND"])
 stack = Stack()
 
 def TYP():
@@ -40,7 +40,7 @@ def LABL(label):
         current_label = Label(curr_labeltokens.current().replace(".", ""))
         current_label.precedSymTab = glbl_vardict
         curr_labeltokens.next()
-        while curr_labeltokens.current() is not "END":
+        while curr_labeltokens.current() is not "LEND":
             current_label.lInstrQueue.append(curr_labeltokens.current())
             curr_labeltokens.next()
         print label+" ~~~> Instr Queue: "+ str(current_label.lInstrQueue)
