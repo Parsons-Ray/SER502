@@ -1,4 +1,8 @@
 #Classes we will need
+global dict_of_symbolTabs
+global current_scope
+global glbl_sym_table
+
 class Stack:
      def __init__(self):
          self.items = []
@@ -94,6 +98,101 @@ class Function:
     def __repr__(self):
         return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
 
+class GlblSymTab:
+    def __init__(self):
+        self.tbl = {}
+
+
+    def getTable(self):
+        return self.tbl
+
+    def add(self, varname, variable):
+        # add identifier to symbol table
+        try:
+            if varname in tbl:
+                raise ValueError("Identifier exists")
+                # if tbl[varname].getType() == variable.getType():
+                #     tbl[varname].setValue(variable.getValue())
+                # else:
+                #     raise ValueError("DataType mismatch for %r - defined as %r".format(varname, tbl[varname].getType))
+            else:
+                tbl[varname] = variable
+        except ValueError:
+            print "Compilation Error: Identifier exists"
+
+    def lookup(self, symbol):
+        try:
+            if symbol in self.tbl:
+                exists =  self.tbl.get(symbol, default=None)
+                if exists:
+                    return exists.getValue()
+                else:
+                    raise ValueError("Symbol Not set")
+            else:
+                raise ValueError("Symbol not found")
+        except ValueError:
+            print "Compilation Error: Identifier not found"
+
+glbl_sym_table = GlblSymTab()
+
+class SymbolTable:
+    @staticmethod
+    def __init__(self, symName, prevScope, glblSymtab = glbl_sym_table):
+        self.symName = symName # symbol table name
+        self.tbl = {}  # symbol table
+        self.scope_hierarchy = []  # Scope Hierarchy list contains the list of the preceding scope
+        self.prevScope = prevScope # previousScope
+        self.setScope()
+        self.glblSymTab = glblSymtab # access to global symbol table
+
+    def setScope(self):
+        # set scope hierarchy for current symbol table
+        self.scope_hierarchy.insert(0, symName)
+        for scope in prevScope.getScope():
+            self.scope_hierarchy.append(scope)
+
+    def add(self, varname, variable):
+        # add identifier to symbol table
+        try:
+            if varname in tbl:
+                raise ValueError("Identifier exists")
+                # if tbl[varname].getType() == variable.getType():
+                #     tbl[varname].setValue(variable.getValue())
+                # else:
+                #     raise ValueError("DataType mismatch for %r - defined as %r".format(varname, tbl[varname].getType))
+            else:
+                tbl[varname] = variable
+        except ValueError:
+            print "Compilation Error: Identifier exists"
+
+    def getScope(self):
+        return self.scope_hierarchy
+
+    def getTable(self):
+        return self.tbl
+
+    def lookup(self, symbol):
+        # lookup symbol table
+        try:
+            if symbol in self.tbl:
+                exists =  self.tbl.get(symbol, default=None)
+                if not exists:
+                    for symTabNames in self.scope_hierarchy:
+                        exists = dict_of_symbolTabs.get(symTabNames).getTable().get(symbol, default=None)
+                        if exists:
+                            return exists.getValue()
+                            break
+                    if not exists:
+                        exists = self.glblSymTab.getTable().get(symbol, default="NIL")
+                        if exists:
+                            return exists.getValue()
+                else:
+                    raise ValueError("Couldn't find symbol, is it declared?")
+        except ValueError:
+            print "Compilation Error: Identifier not found"
+
+
+
 
 class Label:
 
@@ -105,3 +204,4 @@ class Label:
 
     def setSymbolTable(self, symbolTable):
         self.precedSymTab = symbolTable
+

@@ -9,7 +9,7 @@ import re
 tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
 glbl_vardict = {} #this contains all our variables and their values
 glbl_labeldict = {} #this contains all the labels and lines inside them
-curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PLUS", "res", "1", "MOV", "res", "Register_Add", "EOL" , "LEND"])
+curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND"])
 stack = Stack()
 
 def TYP():
