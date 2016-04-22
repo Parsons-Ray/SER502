@@ -1,19 +1,24 @@
 __author__ = 'Digant'
 # File for InfixToPostfix Conversion
-def isOperand(sdkOperator):
-    if not (isOperator(sdkOperator)) and (sdkOperator != "(") and (sdkOperator != ")"):
+
+
+def isOperand(sdkOperand):
+    # Function to check if the sdkOperand is an Operand
+    if not (isOperator(sdkOperand)) and (sdkOperand != "(") and (sdkOperand != ")"):
         return 1
     return 0
 
 
 def isOperator(sdkOperator):
+    # Function to check if the sdkOperator is an Operator
     if sdkOperator == "+" or sdkOperator == "-" or sdkOperator == "*" or sdkOperator == "/" or sdkOperator == "^":
         return 1
     return 0
 
 
-def isEmpty(stackArr):
-    if len(stackArr) == 0:
+def isStackEmpty(stack):
+    # Function to check if the Stack is empty
+    if len(stack) == 0:
         return 1
     return 0
 
@@ -24,9 +29,9 @@ def strToTokens(inputString):
     temporaryString = ''
     tokens = []
     tokensIndex = 0
-    count = 0
+    counter = 0
     for val in strArr:
-        count += 1
+        counter += 1
         if isOperand(val):
             temporaryString += val
         if isOperator(val) or val == ")" or val == "(":
@@ -36,25 +41,29 @@ def strToTokens(inputString):
             temporaryString = ''
             tokens.append(val)
             tokensIndex += 1
-        if count == len(strArr):
+        if counter == len(strArr):
             if temporaryString != '':
                 tokens.append(temporaryString)
     return (tokens)
 
 
 def pushStack(stack, element):
+    # Function to push element into Stack
     stack.append(element)
 
 
 def popStack(stack):
+    # Function to pop element out of Stack
     return stack.pop()
 
 
 def topStack(stack):
-    return (stack[len(stack) - 1])
+    # Function to return top element from Stack
+    return stack[len(stack) - 1]
 
 
 def precedence(operator):
+    # Function to decide Precedence of the Operator
     if operator == "^":
         return (5)
     if (operator == "*") or (operator == "/"):
@@ -68,24 +77,26 @@ def precedence(operator):
 
 
 def infixToPostfixConv(infixStr, postfixStr=[], retType=0):
+    # Function to convert infixToPostfix
     postfixStr = []
     stack = []
     postfixPtr = 0
+    returnVal = ''
     temporaryString = infixStr
     infixStr = []
     infixStr = strToTokens(temporaryString)
     for value in infixStr:
         if isOperand(value):
             postfixStr.append(value)
-            postfixPtr = postfixPtr + 1
+            postfixPtr += 1
         if isOperator(value):
             if value != "^":
-                while (not (isEmpty(stack))) and (precedence(value) <= precedence(topStack(stack))):
+                while (not (isStackEmpty(stack))) and (precedence(value) <= precedence(topStack(stack))):
                     postfixStr.append(topStack(stack))
                     popStack(stack)
                     postfixPtr += 1
             else:
-                while (not (isEmpty(stack))) and (precedence(value) < precedence(topStack(stack))):
+                while (not (isStackEmpty(stack))) and (precedence(value) < precedence(topStack(stack))):
                     postfixStr.append(topStack(stack))
                     popStack(stack)
                     postfixPtr += 1
@@ -93,18 +104,17 @@ def infixToPostfixConv(infixStr, postfixStr=[], retType=0):
         if value == "(":
             pushStack(stack, value)
         if value == ")":
-            while (topStack(stack) != "("):
+            while topStack(stack) != "(":
                 postfixStr.append(popStack(stack))
-                postfixPtr = postfixPtr + 1
+                postfixPtr += 1
             popStack(stack)
 
-    while not (isEmpty(stack)):
+    while not (isStackEmpty(stack)):
         if topStack(stack) == "(":
             popStack(stack)
         else:
             postfixStr.append(popStack(stack))
 
-    returnVal = ''
     for value in postfixStr:
         returnVal += value
 
