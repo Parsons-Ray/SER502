@@ -138,10 +138,10 @@ def declaration(tokenizedInput, value):
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
                     if checkInt(nextValue):
-                        intermediateOutput.append(prevValue + " EQL " + nextValue)
+                        intermediateOutput.append("EQL " + nextValue)
                         nextValue = next(tokenizedInput)
                 elif nextValue == commaLit or nextValue == eol:
-                    intermediateOutput.append(prevValue + " EQL NULL")
+                    intermediateOutput.append("EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
 
@@ -191,21 +191,22 @@ def convertTokens(tokenizedInput):
     tokenizedInputIter = iter(tokenizedInput)
     tokenizedOutput = list()
     for value in tokenizedInputIter:
-        # Scenario 1 : Variable Declaration
-        # Eg : integer a, b := 10, c := 20.
-        # Input : ['integer', 'a', ',', 'b', ':=', '10', ',', 'c', ':=', '20', '.']
-        # Output :
-        # TYP INT a
-        # a EQL NULL
-        # TYP INT b
-        # b EQL 10
-        # TYP INT c
-        # c EQL 20
-        # EOL
+
         if value != '.':
-            #Declaration Call
+            # Scenario 1 : Variable Declaration
+            # Eg : integer a, b := 10, c := 20.
+            # Input : ['integer', 'a', ',', 'b', ':=', '10', ',', 'c', ':=', '20', '.']
+            # Output :
+            # TYP INT a
+            # a EQL NULL
+            # TYP INT b
+            # b EQL 10
+            # TYP INT c
+            # c EQL 20
+            # EOL
             if value in typeName:
                 tokenizedOutput.append(declaration(tokenizedInputIter, value))
+
     print tokenizedOutput
     return tokenizedOutput
 
