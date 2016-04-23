@@ -11,7 +11,8 @@ def isOperand(sdkOperand):
 
 def isOperator(sdkOperator):
     # Function to check if the sdkOperator is an Operator
-    if sdkOperator == "+" or sdkOperator == "-" or sdkOperator == "*" or sdkOperator == "/" or sdkOperator == "^":
+    if sdkOperator == "+" or sdkOperator == "-" or sdkOperator == "*" or sdkOperator == "/" or sdkOperator == "^" or \
+                    sdkOperator == "=" or sdkOperator == "&&" or sdkOperator == "||":
         return 1
     return 0
 
@@ -21,7 +22,6 @@ def isStackEmpty(stack):
     if len(stack) == 0:
         return 1
     return 0
-
 
 def strToTokens(inputString):
     # Function to convert String to Tokens
@@ -64,15 +64,21 @@ def topStack(stack):
 
 def precedence(operator):
     # Function to decide Precedence of the Operator
+    if operator == "&&":
+        return (8)
+    if operator == "||":
+        return (7)
     if operator == "^":
-        return (5)
+        return (6)
     if (operator == "*") or (operator == "/"):
-        return (4)
+        return (5)
     if (operator == "+") or (operator == "-"):
-        return (3)
+        return (4)
     if operator == "(":
-        return (2)
+        return (3)
     if operator == ")":
+        return (2)
+    if operator == "=":
         return (1)
 
 
@@ -116,7 +122,8 @@ def infixToPostfixConv(infixStr, postfixStr=[], retType=0):
             postfixStr.append(popStack(stack))
 
     for value in postfixStr:
-        returnVal += value
+        # Added space to easily split later the operands & arguments
+        returnVal += " " + value
 
     if retType == 0:
         return returnVal

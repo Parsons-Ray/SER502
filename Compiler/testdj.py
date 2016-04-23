@@ -1,16 +1,26 @@
 __author__ = 'Digant'
 import pyparsing as pp
+import re
+from pprint import pprint
+from InfixToPostfix import infixToPostfixConv, isOperator
+
+
+# Function to remove WhiteSpaces
+def removeWhiteSpace(expression):
+    return expression.replace(" ", "")
+
 
 # Writing to Intermediate Intermediate.sdk file
 def writeFile(my_list):
     with open("Intermediate.sdk", 'w') as f:
-        f.write("STRT" + '\n')
+        f.write("SDK STRT" + '\n')
         index = 0
         while index <= len(my_list) - 1:
             for s in my_list[index]:
                 f.write(s + '\n')
             index += 1
-        f.write("END" + '\n')
+        f.write("SDK END" + '\n')
+
 
 # Process : Scanner/Parser to generate Tokenized Output
 def parseSDK(input):
@@ -19,7 +29,9 @@ def parseSDK(input):
     global commaLit
     global assign
     global lsqBracs
+    global lcrBracs
     global rsqBracs
+    global rcrBracs
     global numeric
     global plus
     global minus
@@ -93,8 +105,8 @@ def parseSDK(input):
     nullStatement = pp.Literal("none")
 
     functionSpecification = pp.Keyword("function") + identifier + pp.Literal(
-        "->") + typeDefinition + lBracs + pp.Optional(
-        formalParameters) + rBracs + lcrBracs + pp.ZeroOrMore(pp.Or(simpleStatement ^ compoundStatement)) + rcrBracs
+        "->") + typeDefinition + lBracs + pp.Optional(formalParameters) \
+                            + rBracs + lcrBracs + pp.ZeroOrMore(pp.Or(simpleStatement ^ compoundStatement)) + rcrBracs
 
     sequenceOfStatements = pp.Forward()
     ifStatement = when + lBracs + condition + rBracs + lcrBracs + pp.ZeroOrMore(
@@ -125,8 +137,57 @@ def checkBool(l):
     return bool(l)
 
 
-# Declaration Translator
-def declaration(tokenizedInput, value):
+def returnIntermediateOperator(sdkOperator):
+    if sdkOperator == "+":
+        return 'ADD'
+    elif sdkOperator == "-":
+        return 'SUB'
+    elif sdkOperator == "*":
+        return 'MUL'
+    elif sdkOperator == "/":
+        return 'DIV'
+    elif sdkOperator == "=":
+        return 'EQL'
+    elif sdkOperator == "&&":
+        return 'AND'
+    elif sdkOperator == "||":
+        return 'OR'
+
+
+def typeNameIntermediateConvert(typeName):
+    if typeName == "integer":
+        return "INT"
+    elif typeName == "boolean":
+        return "BOOL"
+    elif typeName == "floating":
+        return "FLT"
+
+
+def assignStatement(assStatement):
+    # Input is an assignment statement like  a = b + c
+    intermediateAssign = 'STRTEXP\n'
+    postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement)).split()
+    for s in postfixExpr:
+        if isOperator(s):
+            intermediateAssign += returnIntermediateOperator(s) + "\n"
+        else:
+            intermediateAssign += 'PUSH ' + s + "\n"
+    intermediateAssign += 'ENDEXP'
+    return intermediateAssign
+
+
+# Variable Declaration Translator
+def varDeclaration(tokenizedInput, value):
+    # Eg : integer a, b := 10, c := 20.
+    # Input : ['integer', 'a', ',', 'b', ':=', '10', ',', 'c', ':=', '20', '.']
+    # Output :
+    # TYP INT a
+    # EQL NULL
+    # TYP INT b
+    # EQL 10
+    # TYP INT c
+    # EQL 20
+    # EOL
     intermediateOutput = list()
     if value == "integer":
         nextValue = next(tokenizedInput)
@@ -138,10 +199,12 @@ def declaration(tokenizedInput, value):
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
                     if checkInt(nextValue):
-                        intermediateOutput.append("EQL " + nextValue)
+                        assStatement = prevValue + "=" + nextValue
+                        intermediateOutput.append(assignStatement(assStatement))
                         nextValue = next(tokenizedInput)
-                elif nextValue == commaLit or nextValue == eol:
-                    intermediateOutput.append("EQL NULL")
+                        # Commented section for if not initialized variable
+                        # elif nextValue == commaLit or nextValue == eol:
+                        # intermediateOutput.append("EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
 
@@ -149,16 +212,15 @@ def declaration(tokenizedInput, value):
         nextValue = next(tokenizedInput)
         while nextValue != ".":
             if nextValue != ",":
-                intermediateOutput.append("TYP FLOAT " + nextValue)
+                intermediateOutput.append("TYP FLT " + nextValue)
                 prevValue = nextValue
                 nextValue = next(tokenizedInput)
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
                     if checkFloat(nextValue):
-                        intermediateOutput.append(prevValue + " EQL " + nextValue)
+                        assStatement = prevValue + "=" + nextValue
+                        intermediateOutput.append(assignStatement(assStatement))
                         nextValue = next(tokenizedInput)
-                elif nextValue == commaLit or nextValue == eol:
-                    intermediateOutput.append(prevValue + " EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
 
@@ -172,10 +234,9 @@ def declaration(tokenizedInput, value):
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
                     if checkBool(nextValue):
-                        intermediateOutput.append(prevValue + " EQL " + nextValue)
+                        assStatement = prevValue + "=" + nextValue
+                        intermediateOutput.append(assignStatement(assStatement))
                         nextValue = next(tokenizedInput)
-                elif nextValue == commaLit or nextValue == eol:
-                    intermediateOutput.append(prevValue + " EQL NULL")
             else:
                 nextValue = next(tokenizedInput)
     # Return Error
@@ -183,9 +244,96 @@ def declaration(tokenizedInput, value):
         intermediateOutput.append("SDK ERROR : Next Value = " + nextValue)
     return intermediateOutput
 
+
+# Handling Variable or Expressions Declaration inside a Block
+def blockDeclaration(tokenizedInput, value):
+    intermediateOutput = ''
+    nextValue = next(tokenizedInput)
+    commaFlag = 0
+    while nextValue != eol:
+        if commaFlag == 1:
+            intermediateOutput += "\n"
+        intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue + "\n"
+        prevValue = nextValue
+        # Handling Declaration
+        if next(tokenizedInput) == ":=":
+            commaFlag = 0
+            rightSide = ''
+            nextValue = next(tokenizedInput)
+            while nextValue != "." and commaFlag == 0:
+                rightSide += nextValue
+                nextValue = next(tokenizedInput)
+                if nextValue == commaLit:
+                    commaFlag = 1
+                    nextValue = next(tokenizedInput)
+            # Assignment Declaration
+            assStatement = prevValue + "=" + rightSide
+            intermediateOutput += assignStatement(assStatement)
+
+    # Return Error
+    if nextValue != ".":
+        intermediateOutput = "SDK ERROR : Next Value = " + rightSide
+    return intermediateOutput
+
+
+# Function Declaration Translator
+def functionDeclaration(tokenizedInput, value):
+    # Eg :
+    # function sampleFunction -> integer (integer param1, boolean param2){
+    #       integer x:= 10, y:= 20.
+    #       integer z:= x + y.
+    #       return z.
+    #   }
+    # Input : ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'param1', ',', 'boolean', 'param2', ')', '{', 'integer', 'x', ':=', '10', ',', 'y', ':=', '20', '.', 'integer', 'z', ':=', 'x', '+', 'y', '.', 'return', 'z', '.', '}']
+    # Output :
+    # FUN sampleFunction INT
+    # PAR INT param1
+    # PAR BOOL param2
+    # STRT
+    # TYP INT x
+    # EQL 10
+    # TYP INT y
+    # EQL 20
+    # EOL
+    # TYP INT z
+    # EQL x y
+    # ADD
+    # RTRN z
+    # END
+    intermediateOutput = list()
+    # Function declaration statement
+    functionName = next(tokenizedInput)
+    next(tokenizedInput)
+    functionReturnType = next(tokenizedInput)
+    intermediateOutput.append("FUN " + functionName + " " + typeNameIntermediateConvert(functionReturnType))
+
+    # Checking Parameters
+    next(tokenizedInput)
+    nextValue = next(tokenizedInput)
+    while nextValue in typeName and nextValue != lcrBracs:
+        intermediateOutput.append("PAR " + typeNameIntermediateConvert(nextValue) + " " + next(tokenizedInput))
+        next(tokenizedInput)
+        nextValue = next(tokenizedInput)
+
+    # Function Body
+    intermediateOutput.append("STRT")
+    nextValue = next(tokenizedInput)
+    while nextValue != 'return':
+        if nextValue in typeName:
+            intermediateOutput.append(blockDeclaration(tokenizedInput, nextValue))
+        nextValue = next(tokenizedInput)
+    intermediateOutput.append("RTRN " + next(tokenizedInput))
+    intermediateOutput.append("END")
+
+    # Return Error
+    nextValue = next(tokenizedInput)
+    if nextValue != ".":
+        intermediateOutput.append("SDK ERROR : Next Value = " + nextValue)
+    return intermediateOutput
+
+
 # Process : Tokenized Parsed String to Assembly Conversion
 def convertTokens(tokenizedInput):
-
     # Building an Iterator on "result" variable
     numItems = len(tokenizedInput)
     tokenizedInputIter = iter(tokenizedInput)
@@ -194,20 +342,11 @@ def convertTokens(tokenizedInput):
 
         if value != '.':
             # Scenario 1 : Variable Declaration
-            # Eg : integer a, b := 10, c := 20.
-            # Input : ['integer', 'a', ',', 'b', ':=', '10', ',', 'c', ':=', '20', '.']
-            # Output :
-            # TYP INT a
-            # a EQL NULL
-            # TYP INT b
-            # b EQL 10
-            # TYP INT c
-            # c EQL 20
-            # EOL
             if value in typeName:
-                tokenizedOutput.append(declaration(tokenizedInputIter, value))
-
-    print tokenizedOutput
+                tokenizedOutput.append(varDeclaration(tokenizedInputIter, value))
+            # Scenario 2 : Function Declaration
+            elif value == "function":
+                tokenizedOutput.append(functionDeclaration(tokenizedInputIter, value))
     return tokenizedOutput
 
 
@@ -223,14 +362,18 @@ def main():
     global when
     global elsevar
     global typeName
+    global lcrBracs
     # Parse Input
-    tokenizedInput = parseSDK("integer a, b := 10, c := 20.")
+    tokenizedInput = parseSDK(
+        "function sampleFunction -> integer (integer param1, boolean param2) { integer x:= 10, y:= 20. integer z:= x + y. return z.}")
+
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
     # print result
-    # ['function', 'factorial', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
+    # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
 
-    print tokenizedInput
+
+    # print tokenizedInput
     # Writing TokenizedOutput to file
     writeFile(convertTokens(tokenizedInput))
 
