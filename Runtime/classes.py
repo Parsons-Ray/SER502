@@ -1,6 +1,26 @@
 #Classes we will need
 global dict_of_symbolTabs
+dict_of_symbolTabs = []
+
 global current_scope
+
+
+current_scope = "GLBL"
+
+
+def symtab_add(name):
+    if name not in dict_of_symbolTabs:
+        dict_of_symbolTabs[name] = name.tbl
+    else:
+        raise KeyError("Symbol table exists, compilation error")
+
+def symtab_del(name):
+    if name in dict_of_symbolTabs:
+        dict_of_symbolTabs.remove(name)
+    else:
+        raise KeyError("Symbol table not in dict")
+
+
 global glbl_sym_table
 
 class Stack:
@@ -98,9 +118,13 @@ class Function:
     def __repr__(self):
         return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
 
+
+
+
 class GlblSymTab:
     def __init__(self):
         self.tbl = {}
+        self.name = "GLBL"
 
 
     def getTable(self):
@@ -183,7 +207,7 @@ class SymbolTable:
                             return exists.getValue()
                             break
                     if not exists:
-                        exists = self.glblSymTab.getTable().get(symbol, default="NIL")
+                        exists = self.glblSymTab.getTable().get(symbol, default=None)
                         if exists:
                             return exists.getValue()
                 else:
@@ -200,8 +224,9 @@ class Label:
         self.name = name
         self.lSymbolTab = {}
         self.lInstrQueue =  []
-        self.precedSymTab = {}
+        self.lSymbTab = SymbolTable(self, self.name, prevScope, glbl_sym_table)
 
-    def setSymbolTable(self, symbolTable):
-        self.precedSymTab = symbolTable
 
+    def lnext(self):
+        for instr in lInstrQueue:
+            yield instr
