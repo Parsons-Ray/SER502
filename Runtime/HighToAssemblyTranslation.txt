@@ -32,12 +32,12 @@
     PAR BOOL param2
     STRT
       TYP INT x
-      x EQL 10
+      EQL 10
       TYP INT y
-      y EQL 20
+      EQL 20
       EOL
       TYP INT z
-      z EQL x y ADD
+      EQL x y ADD
       RTRN z
     END
 
@@ -49,8 +49,8 @@
   #Should be translated to:
 
     CALL sampleFunction
-    PAR x y
-    EOL
+    PAR x
+    PAR y
 
 - - - - - - - - - - When Statement - - - - - - - - - - - -
 #Sample High Level Code:

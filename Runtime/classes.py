@@ -1,5 +1,5 @@
 #Classes we will need
-global dict_of_symbolTabs
+global dict_of_symbolTabs = {}
 global current_scope
 global glbl_sym_table
 
@@ -48,6 +48,11 @@ class Iterator:
         return self.counter
 
 class Variable:
+    def __init__(self, name, value, varType):
+        self.name = name
+        self.value = value
+        self.varType = varType
+
     def getValue(self):
         return self.value
 
@@ -73,27 +78,39 @@ class Variable:
 
 class Function:
     #this section should be done on declaration
-    def __init__(self, returnType):
+    def __init__(self, returnType, name):
+        self.tbl = {}
+        self.name = name
         self.paramValues = {} #format: {'paramName': value}
         self.paramTypes = {} #format: {'paramType': Type}
+        self.order = []
         self.returnType = returnType
 
     def addParam(self, paramType, paramName):
         self.paramValues[paramName] = "NULL" #this value will be set when function is called
         self.paramTypes[paramName] = paramType
+        self.order.append(paramName)
 
     def startPC(self, startPC): #where the start of the body of the funciton is.
         self.startPC = startPC
 
     #this section should be used when the function is called
-    def setParamValues(self, paramName, value):
-        self.paramValues[paramName] = value
+    def setParamValues(self, value):
+        for param in self.order:
+            if self.paramValues[param] is "NULL":
+                self.paramValues[param] = value
+
+    def getStartPC(self):
+        return self.startPC
+
+    def getRetrunPC(self):
+        return self.returnPC
 
     def returnPC(self, returnPC): #place in the enviroment above it to return to after completeing.
         self.returnPC = returnPC
 
-    def setSymbolTable(self, symbolTable):
-        self.symbolTable = symbolTable #This allows us to use all symbols defined in the environment above.
+    def initSymbolTable(self, prevScope): #we do this when we call the function so we know what "prevScope" to give it.
+        self.symbTable = SymbolTable(symName = name, prevScope, glblSymtab = glbl_sym_table)
 
     def __repr__(self):
         return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
@@ -191,9 +208,6 @@ class SymbolTable:
         except ValueError:
             print "Compilation Error: Identifier not found"
 
-
-
-
 class Label:
 
     def __init__(self, name):
@@ -204,4 +218,3 @@ class Label:
 
     def setSymbolTable(self, symbolTable):
         self.precedSymTab = symbolTable
-
