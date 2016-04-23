@@ -1,6 +1,6 @@
 #Classes we will need
 global dict_of_symbolTabs
-dict_of_symbolTabs = []
+dict_of_symbolTabs = {}
 
 global current_scope
 
@@ -159,21 +159,30 @@ class GlblSymTab:
 
 glbl_sym_table = GlblSymTab()
 
+
 class SymbolTable:
+
+        # set scope hierarchy for current symbol table
+
+
     @staticmethod
     def __init__(self, symName, prevScope, glblSymtab = glbl_sym_table):
         self.symName = symName # symbol table name
         self.tbl = {}  # symbol table
         self.scope_hierarchy = []  # Scope Hierarchy list contains the list of the preceding scope
         self.prevScope = prevScope # previousScope
-        self.setScope()
+        self.scope_hierarchy.insert(0, current_scope)
+        list_of_prev_scope = None
+        try:
+            list_of_prev_scope = dict_of_symbolTabs.get(current_scope, None).getScope()
+        except:
+            print("No previous scope")
+        if list_of_prev_scope:
+            for scope in list_of_prev_scope:
+                self.scope_hierarchy.append(scope)
         self.glblSymTab = glblSymtab # access to global symbol table
 
-    def setScope(self):
-        # set scope hierarchy for current symbol table
-        self.scope_hierarchy.insert(0, symName)
-        for scope in prevScope.getScope():
-            self.scope_hierarchy.append(scope)
+
 
     def add(self, varname, variable):
         # add identifier to symbol table
@@ -224,7 +233,7 @@ class Label:
         self.name = name
         self.lSymbolTab = {}
         self.lInstrQueue =  []
-        self.lSymbTab = SymbolTable(self, self.name, prevScope, glbl_sym_table)
+        self.lSymbTab = SymbolTable(self, self.name, current_scope, glbl_sym_table)
 
 
     def lnext(self):
