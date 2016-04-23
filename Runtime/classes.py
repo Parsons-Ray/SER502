@@ -9,13 +9,13 @@ current_scope = "GLBL"
 
 
 def symtab_add(name):
-    if name not in dict_of_symbolTabs:
-        dict_of_symbolTabs[name] = name.tbl
+    if name.symName not in dict_of_symbolTabs:
+        dict_of_symbolTabs[name.symName] = name.tbl
     else:
         raise KeyError("Symbol table exists, compilation error")
 
 def symtab_del(name):
-    if name in dict_of_symbolTabs:
+    if name.symName in dict_of_symbolTabs:
         dict_of_symbolTabs.remove(name)
     else:
         raise KeyError("Symbol table not in dict")
@@ -164,17 +164,15 @@ class SymbolTable:
 
         # set scope hierarchy for current symbol table
 
-
-    @staticmethod
     def __init__(self, symName, prevScope, glblSymtab = glbl_sym_table):
         self.symName = symName # symbol table name
         self.tbl = {}  # symbol table
         self.scope_hierarchy = []  # Scope Hierarchy list contains the list of the preceding scope
         self.prevScope = prevScope # previousScope
-        self.scope_hierarchy.insert(0, current_scope)
+        self.scope_hierarchy.insert(0, prevScope)
         list_of_prev_scope = None
         try:
-            list_of_prev_scope = dict_of_symbolTabs.get(current_scope, None).getScope()
+            list_of_prev_scope = dict_of_symbolTabs.get(prevScope, None).getScope()
         except:
             print("No previous scope")
         if list_of_prev_scope:
@@ -231,9 +229,10 @@ class Label:
 
     def __init__(self, name):
         self.name = name
-        self.lSymbolTab = {}
         self.lInstrQueue =  []
-        self.lSymbTab = SymbolTable(self, self.name, current_scope, glbl_sym_table)
+        self.lSymbTab = SymbolTable(self.name, current_scope, glbl_sym_table)
+        symtab_add(self.lSymbTab)
+
 
 
     def lnext(self):

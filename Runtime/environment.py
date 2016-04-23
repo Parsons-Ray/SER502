@@ -5,11 +5,12 @@ import re
     #integer a, b := 10, c:=20.
 #tokens = Iterator(["TYP", "INT", "a", "a", "EQL", "NULL", "TYP", "INT", "b", "b", "EQL", "10", "TYP", "INT", "c", "c", "EQL", "20", "EOL"])
 
-current_scope = GlblSymTab
+current_scope = "GLBL"
 tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
 glbl_vardict = {} #this contains all our variables and their values
 glbl_labeldict = {} #this contains all the labels and lines inside them
 curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND"])
+loop_labeltokens = Iterator([".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND"])
 stack = Stack()
 
 def TYP():
@@ -43,6 +44,8 @@ def LABL(label):
             current_label.lInstrQueue.append(curr_labeltokens.current())
             curr_labeltokens.next()
         print label+" ~~~> Instr Queue: "+ str(current_label.lInstrQueue)
+        print current_label.lSymbTab.getTable().keys()
+        # for lInstrQueue
     # instrEvaluator =  Iterator(current_label.lInstrQueue
     else:
         print "Label Error: "+ label
