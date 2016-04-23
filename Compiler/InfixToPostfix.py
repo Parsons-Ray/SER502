@@ -22,7 +22,6 @@ def isStackEmpty(stack):
         return 1
     return 0
 
-
 def strToTokens(inputString):
     # Function to convert String to Tokens
     strArr = inputString
