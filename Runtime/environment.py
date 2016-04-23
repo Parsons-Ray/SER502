@@ -5,7 +5,7 @@ import re
     #integer a, b := 10, c:=20.
 #tokens = Iterator(["TYP", "INT", "a", "a", "EQL", "NULL", "TYP", "INT", "b", "b", "EQL", "10", "TYP", "INT", "c", "c", "EQL", "20", "EOL"])
 
-
+current_scope = GlblSymTab
 tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
 glbl_vardict = {} #this contains all our variables and their values
 glbl_labeldict = {} #this contains all the labels and lines inside them
@@ -38,7 +38,6 @@ def LABL(label):
     labelPat = r'\.LABEL[0-9]*'
     if re.match(labelPat, label):
         current_label = Label(curr_labeltokens.current().replace(".", ""))
-        current_label.precedSymTab = glbl_vardict
         curr_labeltokens.next()
         while curr_labeltokens.current() is not "LEND":
             current_label.lInstrQueue.append(curr_labeltokens.current())
