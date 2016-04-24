@@ -7,10 +7,11 @@ import re
 
 current_scope = "GLBL"
 tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
+labelPat = r'\.LABEL[0-9]*'
 glbl_vardict = {} #this contains all our variables and their values
 glbl_labeldict = {} #this contains all the labels and lines inside them
-curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND"])
-loop_labeltokens = Iterator([".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND"])
+curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
+loop_labeltokens = Iterator(["SDKSTRT","TYP", "INT", "a", "PUSH", "a", "PUSH", "10", "EQL", "TYP", "INT", "b", "PUSH", "b", "Push", "15", "EQL", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND2", "SDKEND"])
 stack = Stack()
 
 def TYP():
@@ -35,20 +36,29 @@ def FUN():
     glbl_vardict[name] = currentFunction
     print(glbl_vardict)
 
-def LABL(label):
-    labelPat = r'\.LABEL[0-9]*'
-    if re.match(labelPat, label):
-        current_label = Label(curr_labeltokens.current().replace(".", ""))
-        curr_labeltokens.next()
-        while curr_labeltokens.current() is not "LEND":
-            current_label.lInstrQueue.append(curr_labeltokens.current())
-            curr_labeltokens.next()
-        print label+" ~~~> Instr Queue: "+ str(current_label.lInstrQueue)
-        print current_label.lSymbTab.getTable().keys()
+def LABL_TRACK():
+    while loop_labeltokens.current() is not "SDKEND":
+        label = loop_labeltokens.current()
+        if re.match(labelPat, label):
+            loop_labeltokens.next()
+            current_label = Label(loop_labeltokens.current().replace(".", ""), loop_labeltokens.getCounter())
+        # ltermnum = label[:-1]
+        loop_labeltokens.next()
+    print dict_of_symbolTabs.values()
+    # for key in dict_of_labels.keys():
+    #     pc, name = dict_of_labels.get(key).getStart(), dict_of_labels.get(key).name
+    #     print name + " Starts at ---->" + str(pc)
+        # while curr_labeltokens.current() is not "LEND"+ltermnum:
+            # current_label.lInstrQueue.append(curr_labeltokens.current())
+            # curr_labeltokens.next()
+        # print label+" ~~~> Instr Queue: "+ str(current_label.lInstrQueue)
+        # print current_label.lSymbTab.getTable().keys()
         # for lInstrQueue
     # instrEvaluator =  Iterator(current_label.lInstrQueue
-    else:
-        print "Label Error: "+ label
+    # else:
+    #     print "Label Error: "+ label
+
+
 
 
 def main():
@@ -57,9 +67,9 @@ def main():
         TYP()
     elif nextToken is "FUN":
         FUN()
-    LABL(curr_labeltokens.current())
 #Call the main method. Starts runtime.
 main()
+LABL_TRACK()
 
 # FUN sampleFunction INT        #using 'integer' so we can push it onto stack and check return type at end.
 #     PAR INT param1
