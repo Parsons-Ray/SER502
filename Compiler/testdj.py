@@ -13,13 +13,13 @@ def removeWhiteSpace(expression):
 # Writing to Intermediate Intermediate.sdk file
 def writeFile(my_list):
     with open("Intermediate.sdk", 'w') as f:
-        f.write("SDK STRT" + '\n')
+        f.write("SDKSTRT" + '\n')
         index = 0
         while index <= len(my_list) - 1:
             for s in my_list[index]:
                 f.write(s + '\n')
             index += 1
-        f.write("SDK END" + '\n')
+        f.write("SDKEND" + '\n')
 
 
 # Process : Scanner/Parser to generate Tokenized Output
@@ -71,7 +71,7 @@ def parseSDK(input):
     simpleStatement = pp.Forward()
     compoundStatement = pp.Forward()
     expr = pp.Forward()
-    actualParameter = pp.Or(numericLiteral ^ identifier ^ expr)
+    actualParameter = pp.ZeroOrMore(pp.Optional(",") + pp.Or(numericLiteral ^ identifier ^ expr))
     functionCallExpression = identifier + lBracs + actualParameter + rBracs
     functionCallStatement = functionCallExpression + eol
     primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false") ^ functionCallExpression)
@@ -163,13 +163,34 @@ def typeNameIntermediateConvert(typeName):
         return "FLT"
 
 
+def callFunctionIntermediate(callStatement):
+    # Function Call to Intermediate Code
+    intermediateString = callStatement.split("(")
+    returnString = 'CALL ' + intermediateString[0] + '\n'
+    intermediateStr = intermediateString[1].replace(")", "")
+    searchObj = re.search(r',', intermediateString[1])
+    if searchObj:
+        rightSide = intermediateStr.split(",")
+        for parameter in rightSide:
+            returnString += 'PAR ' + parameter + '\n'
+    elif intermediateString[1] != ')':
+        # Case when only 1 parameter exist
+        returnString += 'PAR ' + intermediateStr + '\n'
+    return returnString
+
+
 def assignStatement(assStatement):
+    # Function for Assigning Statement
     # Input is an assignment statement like  a = b + c
     intermediateAssign = 'STRTEXP\n'
-    postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement)).split()
-    for s in postfixExpr:
+    searchObj = re.search(r'[a-zA-Z]+\([0-9,]*[True]*[False]*\)', assStatement)
+    assStatement = re.sub(r'[a-zA-Z]+\([0-9,]*[True]*[False]*\)', '@', assStatement)
+    postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement))
+    for s in postfixExpr.split():
         if isOperator(s):
             intermediateAssign += returnIntermediateOperator(s) + "\n"
+        elif s == '@':
+            intermediateAssign += callFunctionIntermediate(searchObj.group())
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
     intermediateAssign += 'ENDEXP'
@@ -250,29 +271,40 @@ def blockDeclaration(tokenizedInput, value):
     intermediateOutput = ''
     nextValue = next(tokenizedInput)
     commaFlag = 0
-    while nextValue != eol:
-        if commaFlag == 1:
-            intermediateOutput += "\n"
-        intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue + "\n"
-        prevValue = nextValue
-        # Handling Declaration
-        if next(tokenizedInput) == ":=":
-            commaFlag = 0
-            rightSide = ''
-            nextValue = next(tokenizedInput)
-            while nextValue != "." and commaFlag == 0:
-                rightSide += nextValue
+    # Variable Declaration or assignment
+    if value in typeName:
+        while nextValue != eol:
+            if commaFlag == 1:
+                intermediateOutput += "\n"
+            intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue + "\n"
+            prevValue = nextValue
+            # Handling Declaration
+            if next(tokenizedInput) == ":=":
+                commaFlag = 0
+                rightSide = ''
                 nextValue = next(tokenizedInput)
-                if nextValue == commaLit:
-                    commaFlag = 1
+                while nextValue != "." and commaFlag == 0:
+                    rightSide += nextValue
                     nextValue = next(tokenizedInput)
-            # Assignment Declaration
-            assStatement = prevValue + "=" + rightSide
-            intermediateOutput += assignStatement(assStatement)
+                    if nextValue == commaLit:
+                        commaFlag = 1
+                        nextValue = next(tokenizedInput)
+                # Assignment Declaration
+                assStatement = prevValue + "=" + rightSide
+                intermediateOutput += assignStatement(assStatement)
+    elif nextValue == ":=":
+        # Normal Assignment without declaration
+        rightSide = ''
+        nextValue = next(tokenizedInput)
+        while nextValue != eol:
+            rightSide += nextValue
+            nextValue = next(tokenizedInput)
+        assStatement = value + '=' + rightSide
+        intermediateOutput += assignStatement(assStatement)
 
     # Return Error
-    if nextValue != ".":
-        intermediateOutput = "SDK ERROR : Next Value = " + rightSide
+    # if nextValue != ".":
+    #   intermediateOutput = "SDK ERROR : Next Value = " + rightSide
     return intermediateOutput
 
 
@@ -319,8 +351,11 @@ def functionDeclaration(tokenizedInput, value):
     intermediateOutput.append("STRT")
     nextValue = next(tokenizedInput)
     while nextValue != 'return':
-        if nextValue in typeName:
+        # Handles Assignment Operations
+        if nextValue in typeName or nextValue != '.':
             intermediateOutput.append(blockDeclaration(tokenizedInput, nextValue))
+            # else:
+            # print nextValue
         nextValue = next(tokenizedInput)
     intermediateOutput.append("RTRN " + next(tokenizedInput))
     intermediateOutput.append("END")
@@ -365,7 +400,7 @@ def main():
     global lcrBracs
     # Parse Input
     tokenizedInput = parseSDK(
-        "function sampleFunction -> integer (integer param1, boolean param2) { integer x:= 10, y:= 20. integer z:= x + y. return z.}")
+        "function sampleFunction -> integer (integer param1, boolean param2) { integer x:= 10, y:= 20. z:= x + y. return z.}")
 
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
