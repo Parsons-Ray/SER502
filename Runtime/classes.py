@@ -144,7 +144,7 @@ class Function:
         self.returnPC = returnPC
 
     def initSymbolTable(self, prevScope): #we do this when we call the function so we know what "prevScope" to give it.
-        self.symbTable = SymbolTable(symName = name, prevScope, glblSymtab = glbl_sym_table)
+        self.symbTable = SymbolTable(symName = name, glblSymtab = glbl_sym_table)
 
     def __repr__(self):
         return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
