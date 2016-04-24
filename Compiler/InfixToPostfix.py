@@ -12,7 +12,9 @@ def isOperand(sdkOperand):
 def isOperator(sdkOperator):
     # Function to check if the sdkOperator is an Operator
     if sdkOperator == "+" or sdkOperator == "-" or sdkOperator == "*" or sdkOperator == "/" or sdkOperator == "^" or \
-                    sdkOperator == "=" or sdkOperator == "&&" or sdkOperator == "||":
+                    sdkOperator == "=" or sdkOperator == "&&" or sdkOperator == "||" or sdkOperator == ">" \
+            or sdkOperator == ">=" or sdkOperator == "<" or sdkOperator == "<=" or sdkOperator == "=="\
+            or sdkOperator == "@":
         return 1
     return 0
 
@@ -64,22 +66,31 @@ def topStack(stack):
 
 def precedence(operator):
     # Function to decide Precedence of the Operator
+    if operator == "@":
+        return (12)
     if operator == "&&":
-        return (8)
+        return (11)
     if operator == "||":
-        return (7)
+        return (10)
+    if (operator == "<=") or (operator == ">="):
+        return (9)
+    if (operator == "<") or (operator == ">"):
+        return (8)
     if operator == "^":
-        return (6)
+        return (7)
     if (operator == "*") or (operator == "/"):
-        return (5)
+        return (6)
     if (operator == "+") or (operator == "-"):
+        return (5)
+    if operator == "==":
         return (4)
-    if operator == "(":
-        return (3)
-    if operator == ")":
-        return (2)
     if operator == "=":
+        return (3)
+    if operator == "(":
+        return (2)
+    if operator == ")":
         return (1)
+
 
 
 def infixToPostfixConv(infixStr, postfixStr=[], retType=0):
