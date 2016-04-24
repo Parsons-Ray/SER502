@@ -1,7 +1,8 @@
 #Classes we will need
 global dict_of_symbolTabs
 dict_of_symbolTabs = {}
-
+global dict_of_labels
+dict_of_labels = {}
 global current_scope
 global dict_of_functions
 dict_of_functions = {}
@@ -15,6 +16,18 @@ def symtab_add(name):
         dict_of_symbolTabs[name.symName] = name.tbl
     else:
         raise KeyError("Symbol table exists, compilation error")
+
+def label_add(Label):
+    if Label.name not in dict_of_labels:
+        dict_of_labels[Label.name] = Label
+    else:
+        raise KeyError("Label exists, cannot redeclare label")
+
+def label_del(name):
+    if name in dict_of_labels:
+        dict_of_labels.remove(name)
+    else:
+        raise KeyError("Label does not exist")
 
 def symtab_del(name):
     if name.symName in dict_of_symbolTabs:
@@ -202,7 +215,8 @@ class SymbolTable:
         try:
             list_of_prev_scope = dict_of_symbolTabs.get(prevScope, None).getScope()
         except:
-            print("No previous scope")
+            # print("No previous scope")
+            list_of_prev_scope = None
         if list_of_prev_scope:
             for scope in list_of_prev_scope:
                 self.scope_hierarchy.append(scope)
@@ -256,11 +270,15 @@ class SymbolTable:
         return "table: {0}".format(self.tbl)
 class Label:
 
-    def __init__(self, name):
+    def __init__(self, name, pc):
         self.name = name
-        self.lInstrQueue =  []
+        self.lstartpc = pc
         self.lSymbTab = SymbolTable(self.name, current_scope, glbl_sym_table)
         symtab_add(self.lSymbTab)
+        label_add(self)
+
+    def getStart(self):
+        return self.lstartpc
 
     def lnext(self):
         for instr in lInstrQueue:
