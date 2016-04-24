@@ -55,9 +55,9 @@ def parseSDK(input):
     rBracs = pp.Literal(")")
     lcrBracs = pp.Literal("{")
     rcrBracs = pp.Literal("}")
-    andExpr = pp.Keyword("AND")
-    orExpr = pp.Keyword("OR")
-    notExpr = pp.Keyword("NOT")
+    andExpr = pp.Keyword("&&")
+    orExpr = pp.Keyword("||")
+    notExpr = pp.Keyword("!")
     numericLiteral = numeric
     stringLiteral = pp.Word(pp.alphas, pp.alphanums)
     identifier = stringLiteral
@@ -79,9 +79,9 @@ def parseSDK(input):
     factor = pp.Or((primary + pp.Optional(pp.Literal("^") + primary)) ^ (notExpr + primary))
     term = factor + pp.ZeroOrMore(multiplyingOperator + factor)
     simpleExpression = pp.Optional(unaryAddingOperator) + term + pp.ZeroOrMore(binaryAddingOperator + term)
-    relation = simpleExpression + pp.ZeroOrMore(relationalOperator + simpleExpression)
+    relation = pp.ZeroOrMore(lBracs) + simpleExpression + pp.ZeroOrMore(relationalOperator + simpleExpression) + pp.ZeroOrMore(rBracs)
     # Changed this part due to error scenario : + pp.ZeroOrMore(pp.Or((pp.Literal(",") + simpleExpression) ^ (relationalOperator + simpleExpression)))
-    expr << relation + pp.ZeroOrMore(pp.Or((pp.Literal("AND") + relation) ^ (pp.Literal("OR") + relation)))
+    expr << relation + pp.ZeroOrMore(pp.Or((andExpr + relation)) ^ (orExpr + relation))
     indexedComponent = pp.Literal("[") + (expr + pp.ZeroOrMore("," + expr)) + pp.Literal("]")
     name = pp.Or(identifier ^ indexedComponent)
     condition = expr
@@ -109,10 +109,9 @@ def parseSDK(input):
                             + rBracs + lcrBracs + pp.ZeroOrMore(pp.Or(simpleStatement ^ compoundStatement)) + rcrBracs
 
     sequenceOfStatements = pp.Forward()
-    ifStatement = when + lBracs + condition + rBracs + lcrBracs + pp.ZeroOrMore(
-        simpleStatement) + rcrBracs + pp.ZeroOrMore(
-        elseWhen + lBracs + condition + rBracs + lcrBracs + simpleStatement + rcrBracs) + pp.Optional(
-        elsevar + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs)
+    ifStatement = when + condition + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs + \
+                  pp.ZeroOrMore(elseWhen + lBracs + condition + rBracs + lcrBracs + simpleStatement + rcrBracs) + \
+                  pp.Optional(elsevar + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs)
     loopStatement = loop + lBracs + condition + rBracs + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs
     compoundStatement << pp.Or(loopStatement ^ ifStatement)
     simpleStatement << pp.Or(nullStatement ^ assignmentStatement ^ functionCallStatement ^ declarativeStatement ^
@@ -222,15 +221,13 @@ def varDeclaration(tokenizedInput, value):
     # TYP INT a
     # TYP INT b
     # STRTEXP
-    # PUSH b
     # PUSH 10
-    # EQL
+    # EQL b
     # ENDEXP
     # TYP INT c
     # STRTEXP
-    # PUSH c
     # PUSH 20
-    # EQL
+    # EQL c
     # ENDEXP
     # EOL
     intermediateOutput = list()
@@ -348,23 +345,20 @@ def functionDeclaration(tokenizedInput, value):
     # STRTFUN
     # TYP INT x
     # STRTEXP
-    # PUSH x
     # PUSH 10
-    # EQL
+    # EQL x
     # ENDEXP
     # TYP INT y
     # STRTEXP
-    # PUSH y
     # PUSH 20
-    # EQL
+    # EQL y
     # ENDEXP
     # TYP INT z
     # STRTEXP
-    # PUSH z
     # PUSH x
     # PUSH y
     # ADD
-    # EQL
+    # EQL z
     # ENDEXP
     # ENDFUN
     # RTRN z
@@ -404,6 +398,19 @@ def functionDeclaration(tokenizedInput, value):
     return intermediateOutput
 
 
+# When Statement Intermediate Generator
+def whenStatement(tokenizedInput, value):
+    # Eg: when((a > 20) && ((a < 30) || (a <= 25))){ integer a. } elseWhen (a == b){  integer f. } else{ integer g. }
+    # Input : ['when', '(', 'a', '<', '10', ')', '{', 'integer', 'a', '.', '}', 'elseWhen', '(', 'a', '==', 'b', ')', '{', 'integer', 'f', '.', '}', 'else', '{', 'integer', 'g', '.', '}']
+    # Output :
+    # WHEN
+    #
+    # PAR BOOL param2
+    # STRTFUN
+    # TYP INT x
+    return 1
+
+
 # Process : Tokenized Parsed String to Assembly Conversion
 def convertTokens(tokenizedInput):
     # Building an Iterator on "result" variable
@@ -411,7 +418,6 @@ def convertTokens(tokenizedInput):
     tokenizedInputIter = iter(tokenizedInput)
     tokenizedOutput = list()
     for value in tokenizedInputIter:
-
         if value != '.':
             # Scenario 1 : Variable Declaration
             if value in typeName:
@@ -419,6 +425,9 @@ def convertTokens(tokenizedInput):
             # Scenario 2 : Function Declaration
             elif value == "function":
                 tokenizedOutput.append(functionDeclaration(tokenizedInputIter, value))
+            # Scenario 3 : When Statement
+            elif value == "when":
+                tokenizedOutput.append(whenStatement(tokenizedInputIter, value))
     return tokenizedOutput
 
 
@@ -436,7 +445,7 @@ def main():
     global typeName
     global lcrBracs
     # Parse Input
-    tokenizedInput = parseSDK("function sampleFunction -> integer(integer param1, boolean param2){ integer x:= 10, y:= 20. integer z:= x + y. return z.}")
+    tokenizedInput = parseSDK("when((a > 20) && ((a < 30) || (a < 25))){ integer a. } elseWhen (a == b){  integer f. } else{ integer g. }")
 
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
 
@@ -447,7 +456,7 @@ def main():
     print tokenizedInput
 
     # Sample Exception handling
-    #raise Exception('Incorrect data')
+    raise Exception('Incorrect data')
     # print tokenizedInput
     # Writing TokenizedOutput to file
     writeFile(convertTokens(tokenizedInput))
