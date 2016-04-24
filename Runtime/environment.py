@@ -6,19 +6,36 @@ import re
     #integer a, b := 10, c:=20.
 
 current_scope = "GLBL"
-tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDK"])
+# tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDK"])
 labelPat = r'\.LABEL[0-9]*'
-glbl_labeldict = {} #this contains all the labels and lines inside them
-curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
-loop_labeltokens = Iterator(["SDKSTRT","TYP", "INT", "a", "PUSH", "a", "PUSH", "10", "EQL", "TYP", "INT", "b", "PUSH", "b", "Push", "15", "EQL", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND2", "SDKEND"])
+whenEndPat = r'\.WLEND[0-9]*'
+# curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
+# loop_labeltokens = Iterator(["SDKSTRT","TYP", "INT", "a", "PUSH", "a", "PUSH", "10", "EQL", "TYP", "INT", "b", "PUSH", "b", "Push", "15", "EQL", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND2", "SDKEND"])
+tokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
+# runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", "LOOP", ".LABEL2", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "12", "LT", "JEQ", "LABEL2", "WHEN",".LABEL3", "TYP", "INT", "a", "PUSH", "13", "EQL", "a", "WLEND3", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
+runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX","JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
+global glbl_sym_table
+glbl_sym_table = GlblSymTab()
+symtab_add(glbl_sym_table)
 stack = Stack()
+
+def LABL_TRACK():
+    while runTokens.current() is not "SDKEND":
+        label = runTokens.current()
+        if re.match(labelPat, label):
+            current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1)
+            # ltermnum = label[:-1]
+        runTokens.next()
 
 def TYP():
     tokens.next() #this should pop off "TYP"
     varType = tokens.next() #pushes "INT, FLT, BOOL" onto stack
     varID = tokens.next() #variable identifier ("a", "b", "c")
+    print current_scope
     var = Variable(varID, None, varType)
     dict_of_symbolTabs[current_scope].add(varID, var)
+    print dict_of_symbolTabs[current_scope]
+
 
 def FUN():
     tokens.next()#pop FUN
@@ -62,14 +79,12 @@ def RTRN():
     tokens.setcounter(exitedFun.getReturnPC())
 
 def LABL_TRACK():
-    while loop_labeltokens.current() is not "SDKEND":
-        label = loop_labeltokens.current()
+    while runTokens.current() is not "SDKEND":
+        label = runTokens.current()
         if re.match(labelPat, label):
-            loop_labeltokens.next()
-            current_label = Label(loop_labeltokens.current().replace(".", ""), loop_labeltokens.getCounter())
-        # ltermnum = label[:-1]
-        loop_labeltokens.next()
-    print dict_of_symbolTabs.values()
+            current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1)
+            # ltermnum = label[:-1]
+        runTokens.next()
     # for key in dict_of_labels.keys():
     #     pc, name = dict_of_labels.get(key).getStart(), dict_of_labels.get(key).name
     #     print name + " Starts at ---->" + str(pc)
@@ -91,11 +106,12 @@ def STARTEX():
         if nextToken == "PUSH":
             varName = tokens.next()
             if re.match(r'[+-]?(\d+(\.\d*)?|\.\d+)', varName):
-                stack.push(varName)
+                stack.push(eval(varName))
             else:
                 try:
                     stack.push(dict_of_symbolTabs[current_scope].lookup(varName).getValue())
-                except ValueError:
+
+                except:
                     print("Symbol not found")
 
         elif nextToken == "ADD":
@@ -153,7 +169,9 @@ def STARTEX():
                 stack.push(1)
         elif nextToken == "EQL":
             try:
+                print current_scope
                 varObj = dict_of_symbolTabs[current_scope].lookup(tokens.next())
+                print dict_of_symbolTabs[current_scope]
                 varObj.setValue(stack.pop())
             except ValueError:
                 print("Identifier not found")
@@ -174,10 +192,45 @@ def FUNEND():
     print("here: {0}".format(finishedFunction.getRetrunPC()))
     tokens.setCounter(finishedFunction.getRetrunPC())
 
+def LABL():
+    lname = tokens.current().replace(".", "")
+    global current_scope
+    current_scope = lname
+    tokens.next()
+
+def CMP():
+    if stack.pop() >= 1:
+        tokens.next()
+    else:
+        while tokens.current() is not "LOOPLEND"+current_scope[:-1]:
+            tokens.next()
+def JMP():
+    tokens.next()
+    label = tokens.next()
+    global current_scope
+    current_scope = label
+    tokens.setCounter(dict_of_labels[label].getStart())
+
+def JEQ():
+    if stack.pop() >= 1:
+        global current_scope
+        current_scope = tokens.next()
+        tokens.setCounter(dict_of_labels.get(current_scope).getStart())
+    else:
+        while tokens.current() is not "WLEND"+ current_scope[:-1]:
+            tokens.next()
+
+def WLEND():
+    while tokens.current() is not "ENDW":
+        tokens.next()
+
+
 def main():
+    LABL_TRACK()
     dict_of_symbolTabs[current_scope] = GlblSymTab()
-    while tokens.current() is not "SDK":
-        print("dict_of_symbolTabs: {0}".format(dict_of_symbolTabs))
+    while tokens.current() is not "SDKEND":
+        # print("dict_of_symbolTabs: {0}".format(dict_of_symbolTabs))
+        # print current_scope+ "----> " + tokens.current()
         nextToken = tokens.current()
         print(nextToken)
         if nextToken is "TYP":
@@ -192,6 +245,18 @@ def main():
             STARTEX()
         elif nextToken is "FUNEND":
             FUNEND()
+        elif re.match(labelPat, nextToken):
+            LABL()
+        elif nextToken is "CMP":
+            CMP()
+        elif nextToken is "JMP":
+            JMP()
+        elif nextToken is "JEQ":
+            JEQ()
+        elif nextToken is "JNEQ":
+            JNEQ()
+        elif re.match(whenEndPat, nextToken):
+            WLEND()
         else:
             tokens.next()
 
