@@ -1,10 +1,11 @@
 #Classes we will need
-
 global dict_of_symbolTabs
 dict_of_symbolTabs = {}
 global dict_of_labels
 dict_of_labels = {}
 global current_scope
+global dict_of_functions
+dict_of_functions = {}
 
 
 current_scope = "GLBL"
@@ -46,8 +47,10 @@ class Stack:
 
      def push(self, item):
          self.items.append(item)
+         print("Stack: {0}".format(self.items))
 
      def pop(self):
+         print("Stack: {0}".format(self.items))
          return self.items.pop()
 
      def peek(self):
@@ -82,10 +85,10 @@ class Iterator:
         return self.counter
 
 class Variable:
-    def __init__(self, name, value, varType):
+    def __init__(self, name, value, valueType):
         self.name = name
         self.value = value
-        self.varType = varType
+        self.valueType = valueType
 
     def getValue(self):
         return self.value
@@ -98,7 +101,7 @@ class Variable:
 
     def setValue(self, value):#check and set the value to the appropriate type.
         if value is "NULL":
-            self.value = "NULL"
+            self.value = None
         elif self.valueType is "INT":
             self.value = int(value)
         elif self.valueType is "FLT":
@@ -115,14 +118,13 @@ class Function:
     def __init__(self, returnType, name):
         self.tbl = {}
         self.name = name
-        self.paramValues = {} #format: {'paramName': value}
-        self.paramTypes = {} #format: {'paramType': Type}
+        self.params = {}
         self.order = []
         self.returnType = returnType
 
     def addParam(self, paramType, paramName):
-        self.paramValues[paramName] = "NULL" #this value will be set when function is called
-        self.paramTypes[paramName] = paramType
+        var = Variable(paramName, "NULL", paramType)
+        self.params[paramName] = var
         self.order.append(paramName)
 
     def startPC(self, startPC): #where the start of the body of the funciton is.
@@ -131,23 +133,31 @@ class Function:
     #this section should be used when the function is called
     def setParamValues(self, value):
         for param in self.order:
-            if self.paramValues[param] is "NULL":
-                self.paramValues[param] = value
+            if self.params[param].getValue() is "NULL":
+                self.params[param].setValue(value)
+                break
 
+
+    def getParams(self):
+        return self.params
     def getStartPC(self):
         return self.startPC
 
     def getRetrunPC(self):
         return self.returnPC
 
+    def getName(self):
+        return self.name
+
+    # def initSymbolTable(self):
+    #     self.symTable = SymbolTable(self.name, current_scope, glbl_sym_table)
+
     def returnPC(self, returnPC): #place in the enviroment above it to return to after completeing.
         self.returnPC = returnPC
 
-    def initSymbolTable(self, prevScope): #we do this when we call the function so we know what "prevScope" to give it.
-        self.symbTable = SymbolTable(symName = name, glblSymtab = glbl_sym_table)
 
     def __repr__(self):
-        return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
+        return "ReturnType: {0}, params: {1},  startPC: {2}, order: {3}, returnPC: {4}".format(self.returnType, self.params,  self.startPC, self.order, self.returnPC)
 
 
 
@@ -202,6 +212,7 @@ class SymbolTable:
         self.prevScope = prevScope # previousScope
         self.scope_hierarchy.insert(0, prevScope)
         list_of_prev_scope = None
+
         try:
             list_of_prev_scope = dict_of_symbolTabs.get(prevScope, None).getScope()
         except:
@@ -217,14 +228,14 @@ class SymbolTable:
     def add(self, varname, variable):
         # add identifier to symbol table
         try:
-            if varname in tbl:
+            if varname in self.tbl:
                 raise ValueError("Identifier exists")
                 # if tbl[varname].getType() == variable.getType():
                 #     tbl[varname].setValue(variable.getValue())
                 # else:
                 #     raise ValueError("DataType mismatch for %r - defined as %r".format(varname, tbl[varname].getType))
             else:
-                tbl[varname] = variable
+                self.tbl[varname] = variable
         except ValueError:
             print "Compilation Error: Identifier exists"
 
@@ -238,22 +249,26 @@ class SymbolTable:
         # lookup symbol table
         try:
             if symbol in self.tbl:
-                exists =  self.tbl.get(symbol, default=None)
-                if not exists:
+                exists =  self.tbl.get(symbol, None)
+                if exists:
+                    return exists
+                elif not exists:
                     for symTabNames in self.scope_hierarchy:
-                        exists = dict_of_symbolTabs.get(symTabNames).getTable().get(symbol, default=None)
+                        exists = dict_of_symbolTabs.get(symTabNames).getTable().get(symbol, None)
                         if exists:
-                            return exists.getValue()
+                            return exists
                             break
                     if not exists:
-                        exists = self.glblSymTab.getTable().get(symbol, default=None)
+                        exists = self.glblSymTab.getTable().get(symbol, None)
                         if exists:
-                            return exists.getValue()
+                            return exists
                 else:
                     raise ValueError("Couldn't find symbol, is it declared?")
         except ValueError:
             print "Compilation Error: Identifier not found"
 
+    def __repr__(self):
+        return "table: {0}".format(self.tbl)
 class Label:
 
     def __init__(self, name, pc):
