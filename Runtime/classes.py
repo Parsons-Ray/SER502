@@ -1,6 +1,5 @@
 #Classes we will need
-global dict_of_symbolTabs
-dict_of_symbolTabs = {}
+global dict_of_symbolTabs = {}
 
 global current_scope
 
@@ -9,13 +8,13 @@ current_scope = "GLBL"
 
 
 def symtab_add(name):
-    if name not in dict_of_symbolTabs:
-        dict_of_symbolTabs[name] = name.tbl
+    if name.symName not in dict_of_symbolTabs:
+        dict_of_symbolTabs[name.symName] = name.tbl
     else:
         raise KeyError("Symbol table exists, compilation error")
 
 def symtab_del(name):
-    if name in dict_of_symbolTabs:
+    if name.symName in dict_of_symbolTabs:
         dict_of_symbolTabs.remove(name)
     else:
         raise KeyError("Symbol table not in dict")
@@ -68,6 +67,11 @@ class Iterator:
         return self.counter
 
 class Variable:
+    def __init__(self, name, value, varType):
+        self.name = name
+        self.value = value
+        self.varType = varType
+
     def getValue(self):
         return self.value
 
@@ -93,27 +97,39 @@ class Variable:
 
 class Function:
     #this section should be done on declaration
-    def __init__(self, returnType):
+    def __init__(self, returnType, name):
+        self.tbl = {}
+        self.name = name
         self.paramValues = {} #format: {'paramName': value}
         self.paramTypes = {} #format: {'paramType': Type}
+        self.order = []
         self.returnType = returnType
 
     def addParam(self, paramType, paramName):
         self.paramValues[paramName] = "NULL" #this value will be set when function is called
         self.paramTypes[paramName] = paramType
+        self.order.append(paramName)
 
     def startPC(self, startPC): #where the start of the body of the funciton is.
         self.startPC = startPC
 
     #this section should be used when the function is called
-    def setParamValues(self, paramName, value):
-        self.paramValues[paramName] = value
+    def setParamValues(self, value):
+        for param in self.order:
+            if self.paramValues[param] is "NULL":
+                self.paramValues[param] = value
+
+    def getStartPC(self):
+        return self.startPC
+
+    def getRetrunPC(self):
+        return self.returnPC
 
     def returnPC(self, returnPC): #place in the enviroment above it to return to after completeing.
         self.returnPC = returnPC
 
-    def setSymbolTable(self, symbolTable):
-        self.symbolTable = symbolTable #This allows us to use all symbols defined in the environment above.
+    def initSymbolTable(self, prevScope): #we do this when we call the function so we know what "prevScope" to give it.
+        self.symbTable = SymbolTable(symName = name, prevScope, glblSymtab = glbl_sym_table)
 
     def __repr__(self):
         return "ReturnType: {0}, ParamValues: {1}, paramType: {2}, startPC: {3}".format(self.returnType, self.paramValues, self.paramTypes, self.startPC)
@@ -164,17 +180,15 @@ class SymbolTable:
 
         # set scope hierarchy for current symbol table
 
-
-    @staticmethod
     def __init__(self, symName, prevScope, glblSymtab = glbl_sym_table):
         self.symName = symName # symbol table name
         self.tbl = {}  # symbol table
         self.scope_hierarchy = []  # Scope Hierarchy list contains the list of the preceding scope
         self.prevScope = prevScope # previousScope
-        self.scope_hierarchy.insert(0, current_scope)
+        self.scope_hierarchy.insert(0, prevScope)
         list_of_prev_scope = None
         try:
-            list_of_prev_scope = dict_of_symbolTabs.get(current_scope, None).getScope()
+            list_of_prev_scope = dict_of_symbolTabs.get(prevScope, None).getScope()
         except:
             print("No previous scope")
         if list_of_prev_scope:
@@ -224,17 +238,13 @@ class SymbolTable:
         except ValueError:
             print "Compilation Error: Identifier not found"
 
-
-
-
 class Label:
 
     def __init__(self, name):
         self.name = name
-        self.lSymbolTab = {}
         self.lInstrQueue =  []
-        self.lSymbTab = SymbolTable(self, self.name, current_scope, glbl_sym_table)
-
+        self.lSymbTab = SymbolTable(self.name, current_scope, glbl_sym_table)
+        symtab_add(self.lSymbTab)
 
     def lnext(self):
         for instr in lInstrQueue:
