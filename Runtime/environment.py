@@ -217,13 +217,19 @@ def JEQ():
         current_scope = tokens.next()
         tokens.setCounter(dict_of_labels.get(current_scope).getStart())
     else:
-        while tokens.current() is not "WLEND"+ current_scope[:-1]:
+        while tokens.current() is not "LEND"+ current_scope[:-1]:
             tokens.next()
 
 def WLEND():
     while tokens.current() is not "ENDW":
         tokens.next()
+    global current_scope
+    current_scope = dict_of_labels.get(current_scope).getScope()[0]
 
+def LOOPLEND():
+    global current_scope
+    current_scope = dict_of_symbolTabs[current_scope].getScope()[0]
+    tokens.next()
 
 def main():
     LABL_TRACK()
@@ -253,10 +259,12 @@ def main():
             JMP()
         elif nextToken is "JEQ":
             JEQ()
-        elif nextToken is "JNEQ":
-            JNEQ()
-        elif re.match(whenEndPat, nextToken):
+        # elif nextToken is "JNEQ":
+        #     JNEQ()
+        elif nextToken is "LEND"+current_scope[:-1]:
             WLEND()
+        elif nextToken is "LOOPLEND"+current_scope[:-1]:
+            LOOPLEND()
         else:
             tokens.next()
 
