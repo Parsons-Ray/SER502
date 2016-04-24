@@ -138,6 +138,7 @@ def checkBool(l):
 
 
 def returnIntermediateOperator(sdkOperator):
+    # Function to return Operator's Intermediate Codes
     if sdkOperator == "+":
         return 'ADD'
     elif sdkOperator == "-":
@@ -152,6 +153,20 @@ def returnIntermediateOperator(sdkOperator):
         return 'AND'
     elif sdkOperator == "||":
         return 'OR'
+    elif sdkOperator == ">":
+        return 'GT'
+    elif sdkOperator == "<":
+        return 'LT'
+    elif sdkOperator == ">=":
+        return 'GE'
+    elif sdkOperator == "<=":
+        return 'LE'
+    elif sdkOperator == "==":
+        return 'EEQL'
+    elif sdkOperator == "!=":
+        return 'NEQL'
+    elif sdkOperator == "!":
+        return 'NOT'
 
 
 def typeNameIntermediateConvert(typeName):
@@ -185,7 +200,8 @@ def assignStatement(assStatement):
     intermediateAssign = 'STRTEXP\n'
     searchObj = re.search(r'[a-zA-Z]+\([0-9,]*[True]*[False]*\)', assStatement)
     assStatement = re.sub(r'[a-zA-Z]+\([0-9,]*[True]*[False]*\)', '@', assStatement)
-    postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement))
+    intermediateString = assStatement.split("=")
+    postfixExpr = infixToPostfixConv(removeWhiteSpace(intermediateString[1]))
     for s in postfixExpr.split():
         if isOperator(s):
             intermediateAssign += returnIntermediateOperator(s) + "\n"
@@ -193,6 +209,7 @@ def assignStatement(assStatement):
             intermediateAssign += callFunctionIntermediate(searchObj.group())
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
+    intermediateAssign += "EQL " + intermediateString[0] + "\n"
     intermediateAssign += 'ENDEXP'
     return intermediateAssign
 
@@ -203,11 +220,18 @@ def varDeclaration(tokenizedInput, value):
     # Input : ['integer', 'a', ',', 'b', ':=', '10', ',', 'c', ':=', '20', '.']
     # Output :
     # TYP INT a
-    # EQL NULL
     # TYP INT b
-    # EQL 10
+    # STRTEXP
+    # PUSH b
+    # PUSH 10
+    # EQL
+    # ENDEXP
     # TYP INT c
-    # EQL 20
+    # STRTEXP
+    # PUSH c
+    # PUSH 20
+    # EQL
+    # ENDEXP
     # EOL
     intermediateOutput = list()
     if value == "integer":
@@ -321,15 +345,28 @@ def functionDeclaration(tokenizedInput, value):
     # FUN sampleFunction INT
     # PAR INT param1
     # PAR BOOL param2
-    # STRT
+    # STRTFUN
     # TYP INT x
-    # EQL 10
+    # STRTEXP
+    # PUSH x
+    # PUSH 10
+    # EQL
+    # ENDEXP
     # TYP INT y
-    # EQL 20
-    # EOL
+    # STRTEXP
+    # PUSH y
+    # PUSH 20
+    # EQL
+    # ENDEXP
     # TYP INT z
-    # EQL x y
+    # STRTEXP
+    # PUSH z
+    # PUSH x
+    # PUSH y
     # ADD
+    # EQL
+    # ENDEXP
+    # ENDFUN
     # RTRN z
     # END
     intermediateOutput = list()
@@ -348,7 +385,7 @@ def functionDeclaration(tokenizedInput, value):
         nextValue = next(tokenizedInput)
 
     # Function Body
-    intermediateOutput.append("STRT")
+    intermediateOutput.append("STRTFUN")
     nextValue = next(tokenizedInput)
     while nextValue != 'return':
         # Handles Assignment Operations
@@ -358,7 +395,7 @@ def functionDeclaration(tokenizedInput, value):
             # print nextValue
         nextValue = next(tokenizedInput)
     intermediateOutput.append("RTRN " + next(tokenizedInput))
-    intermediateOutput.append("END")
+    intermediateOutput.append("ENDFUN")
 
     # Return Error
     nextValue = next(tokenizedInput)
@@ -399,15 +436,18 @@ def main():
     global typeName
     global lcrBracs
     # Parse Input
-    tokenizedInput = parseSDK(
-        "function sampleFunction -> integer (integer param1, boolean param2) { integer x:= 10, y:= 20. z:= x + y. return z.}")
+    tokenizedInput = parseSDK("function sampleFunction -> integer(integer param1, boolean param2){ integer x:= 10, y:= 20. integer z:= x + y. return z.}")
+
+    # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
 
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
     # print result
     # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
+    print tokenizedInput
 
-
+    # Sample Exception handling
+    #raise Exception('Incorrect data')
     # print tokenizedInput
     # Writing TokenizedOutput to file
     writeFile(convertTokens(tokenizedInput))
