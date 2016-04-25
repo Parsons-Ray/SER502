@@ -44,10 +44,10 @@ class Stack:
 
      def push(self, item):
          self.items.append(item)
-         print("Stack: {0}".format(self.items))
+         #print("Stack: {0}".format(self.items))
 
      def pop(self):
-         print("Stack: {0}".format(self.items))
+         #print("Stack: {0}".format(self.items))
          return self.items.pop()
 
      def peek(self):

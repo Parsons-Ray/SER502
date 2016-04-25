@@ -1,12 +1,13 @@
 from classes import *
 import re
+import copy
 
 #Globals
 #highlevel code looks like:
     #integer a, b := 10, c:=20.
 global current_scope
 current_scope = "GLBL"
-tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "b", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "30", "PAR", "20", "SDKEND"])
+tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "CALL", "sampleFunction", "PAR", "a", "PAR", "20", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDKEND"])
 labelPat = r'\.LABEL[0-9]*'
 whenEndPat = r'\.WLEND[0-9]*'
 # curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
@@ -43,11 +44,12 @@ def FUN():
     tokens.next()#pop End
 
 def CALL():
+    print dict_of_symbolTabs[current_scope]
+    stop = raw_input()
     tokens.next() #pop CALL
-    currentFunction = dict_of_functions[tokens.next()]#functions should only be declared in global
+    currentFunction = copy.deepcopy(dict_of_functions[tokens.next()])#functions should only be declared in global
     while tokens.next() is "PAR": #add all parameters
         nextValue = tokens.next()
-
         try:
             if dict_of_symbolTabs[current_scope].lookup(nextValue) is not None:
                 nextValue = dict_of_symbolTabs[current_scope].lookup(nextValue).getValue()
@@ -55,6 +57,8 @@ def CALL():
             print("value Not Found")
 
         currentFunction.setParamValues(nextValue)
+    temp = tokens.getCounter()
+    #print "temp: " + str(currentFunction)
     currentFunction.returnPC(tokens.getCounter()-1)#set return PC
     print("returnPC: {0}".format(tokens.getCounter()))
 
