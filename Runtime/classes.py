@@ -13,7 +13,7 @@ current_scope = "GLBL"
 
 def symtab_add(name):
     if name.symName not in dict_of_symbolTabs:
-        dict_of_symbolTabs[name.symName] = name.tbl
+        dict_of_symbolTabs[name.symName] = name
     else:
         raise KeyError("Symbol table exists, compilation error")
 
@@ -155,6 +155,7 @@ class Function:
     def returnPC(self, returnPC): #place in the enviroment above it to return to after completeing.
         self.returnPC = returnPC
 
+
     def __repr__(self):
         return "ReturnType: {0}, params: {1},  startPC: {2}, order: {3}, returnPC: {4}".format(self.returnType, self.params,  self.startPC, self.order, self.returnPC)
 
@@ -164,7 +165,7 @@ class Function:
 class GlblSymTab:
     def __init__(self):
         self.tbl = {}
-        self.name = "GLBL"
+        self.symName = "GLBL"
 
 
     def getTable(self):
@@ -173,43 +174,40 @@ class GlblSymTab:
     def add(self, varname, variable):
         # add identifier to symbol table
         try:
-            if varname in tbl:
+            if varname in self.tbl:
                 raise ValueError("Identifier exists")
                 # if tbl[varname].getType() == variable.getType():
                 #     tbl[varname].setValue(variable.getValue())
                 # else:
                 #     raise ValueError("DataType mismatch for %r - defined as %r".format(varname, tbl[varname].getType))
             else:
-                tbl[varname] = variable
+                self.tbl[varname] = variable
         except ValueError:
             print "Compilation Error: Identifier exists"
 
     def lookup(self, symbol):
+        # lookup symbol table
         try:
             if symbol in self.tbl:
-                exists =  self.tbl.get(symbol, default=None)
+                exists =  self.tbl.get(symbol, None)
                 if exists:
-                    return exists.getValue()
-                else:
-                    raise ValueError("Symbol Not set")
-            else:
-                raise ValueError("Symbol not found")
-        except ValueError:
+                    return exists
+        except:
             print "Compilation Error: Identifier not found"
 
-glbl_sym_table = GlblSymTab()
+    def __repr__(self):
+        return "table: {0}".format(self.tbl)
 
 
 class SymbolTable:
 
         # set scope hierarchy for current symbol table
 
-    def __init__(self, symName, prevScope, glblSymtab = glbl_sym_table):
+    def __init__(self, symName, prevScope):
         self.symName = symName # symbol table name
         self.tbl = {}  # symbol table
         self.scope_hierarchy = []  # Scope Hierarchy list contains the list of the preceding scope
         self.prevScope = prevScope # previousScope
-        self.scope_hierarchy.insert(0, prevScope)
         list_of_prev_scope = None
 
         try:
@@ -220,9 +218,8 @@ class SymbolTable:
         if list_of_prev_scope:
             for scope in list_of_prev_scope:
                 self.scope_hierarchy.append(scope)
-        self.glblSymTab = glblSymtab # access to global symbol table
-
-
+        # self.glblSymTab = glblSymtab # access to global symbol table)
+        self.scope_hierarchy.append("GLBL")
 
     def add(self, varname, variable):
         # add identifier to symbol table
@@ -246,25 +243,20 @@ class SymbolTable:
 
     def lookup(self, symbol):
         # lookup symbol table
-        try:
-            if symbol in self.tbl:
+        # print "Scope Hierarchy -----> "+ self.scope_hierarchy
+        if symbol in self.tbl:
+                print ("exists in scope")
                 exists =  self.tbl.get(symbol, None)
                 if exists:
                     return exists
-                elif not exists:
-                    for symTabNames in self.scope_hierarchy:
-                        exists = dict_of_symbolTabs.get(symTabNames).getTable().get(symbol, None)
-                        if exists:
-                            return exists
-                            break
-                    if not exists:
-                        exists = self.glblSymTab.getTable().get(symbol, None)
-                        if exists:
-                            return exists
+        else:
+            for symTabNames in self.scope_hierarchy:
+                exists = dict_of_symbolTabs.get(symTabNames).getTable().get(symbol, None)
+                if exists:
+                    print ("exists in " + symTabNames)
+                    return exists
                 else:
                     raise ValueError("Couldn't find symbol, is it declared?")
-        except ValueError:
-            print "Compilation Error: Identifier not found"
 
     def __repr__(self):
         return "table: {0}, prevScope: {1}".format(self.tbl, self.prevScope)
@@ -273,7 +265,7 @@ class Label:
     def __init__(self, name, pc):
         self.name = name
         self.lstartpc = pc
-        self.lSymbTab = SymbolTable(self.name, current_scope, glbl_sym_table)
+        self.lSymbTab = SymbolTable(self.name, current_scope)
         symtab_add(self.lSymbTab)
         label_add(self)
 
