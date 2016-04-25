@@ -13,13 +13,13 @@ def removeWhiteSpace(expression):
 # Writing to Intermediate Intermediate.sdk file
 def writeFile(my_list):
     with open("Intermediate.sdk", 'w') as f:
-        f.write("SDK STRT" + '\n')
+        f.write("SDKSTRT" + '\n')
         index = 0
         while index <= len(my_list) - 1:
             for s in my_list[index]:
                 f.write(s + '\n')
             index += 1
-        f.write("SDK END" + '\n')
+        f.write("SDKEND" + '\n')
 
 
 # Process : Scanner/Parser to generate Tokenized Output
@@ -399,6 +399,7 @@ def whenCondition(tokenizedInput, value):
     intermediateAssign += "ENDEXP"
     return intermediateAssign
 
+# Function to translate When statement's body
 def whenBody(tokenizedInput, value):
     intermediateAssign = ''
     nextValue = value
