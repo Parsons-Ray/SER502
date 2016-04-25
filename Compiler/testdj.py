@@ -152,6 +152,20 @@ def returnIntermediateOperator(sdkOperator):
         return 'AND'
     elif sdkOperator == "||":
         return 'OR'
+    elif sdkOperator == "<":
+        return 'LT'
+    elif sdkOperator == ">":
+        return 'GT'
+    elif sdkOperator == "<=":
+        return 'LTE'
+    elif sdkOperator == ">=":
+        return 'GTE'
+    elif sdkOperator == "==":
+        return 'EEQL'
+    elif sdkOperator == "!=":
+        return 'NEQL'
+    elif sdkOperator == "!":
+        return 'NOT'
 
 
 def typeNameIntermediateConvert(typeNames):
