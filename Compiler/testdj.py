@@ -58,6 +58,7 @@ def parseSDK(input):
     andExpr = pp.Keyword("&&")
     orExpr = pp.Keyword("||")
     notExpr = pp.Keyword("!")
+    breakStatement = pp.Keyword("break") + eol
     numericLiteral = numeric
     stringLiteral = pp.Word(pp.alphas, pp.alphanums)
     identifier = stringLiteral
@@ -112,7 +113,7 @@ def parseSDK(input):
     ifStatement = when + condition + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs + \
                   pp.ZeroOrMore(elseWhen + condition + lcrBracs + simpleStatement + rcrBracs) + \
                   pp.Optional(elsevar + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs)
-    loopStatement = loop + lBracs + condition + rBracs + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs
+    loopStatement = loop + condition + lcrBracs + pp.ZeroOrMore(pp.Or(simpleStatement ^ compoundStatement ^ breakStatement)) + rcrBracs
     compoundStatement << pp.Or(loopStatement ^ ifStatement)
     simpleStatement << pp.Or(nullStatement ^ assignmentStatement ^ functionCallStatement ^ declarativeStatement ^
                              printStatement ^ returnStatement)
@@ -325,6 +326,9 @@ def blockDeclaration(tokenizedInput, value):
             nextValue = next(tokenizedInput)
         assStatement = value + '=' + rightSide
         intermediateOutput += assignStatement(assStatement)
+    elif nextValue == "break":
+        nextValue = next(tokenizedInput)
+        intermediateOutput += 'BREAK'
 
     # Return Error
     # if nextValue != ".":
@@ -504,6 +508,52 @@ def whenStatement(tokenizedInput, value):
     #   intermediateOutput.append("SDK ERROR : Next Value = " + nextValue)
     return intermediateOutput
 
+# Loop Sequence Statements
+def loopStatement(tokenizedInput, value):
+    # Eg: loop ((a < 50) || (b >10)){ integer a. break. }
+    # Input :
+    # ['loop', '(', '(', 'a', '<', '50', ')', '||', '(', 'b', '>', '10', ')', ')', '{', 'integer', 'a', '.', 'break', '.', '}']
+    # Output :
+    # LOOP
+    # STRTEXP
+    # PUSH a
+    # PUSH 50
+    # LT
+    # PUSH b
+    # PUSH 10
+    # GT
+    # OR
+    # ENDEXP
+    # JEQ LABEL1
+    # .LABEL1
+    # TYP INT a
+    # BREAK
+    # LLEND1
+    # LOOP END
+    global labelCounter
+    intermediateOutput = list()
+    buildExpr = ''
+    # Loop statement declaration
+    intermediateOutput.append("LOOP")
+    nextValue = next(tokenizedInput)
+
+    # Loop Condition Check
+    intermediateOutput.append(whenCondition(tokenizedInput, nextValue))
+    labelCounter += 1
+    intermediateOutput.append("JEQ LABEL" + str(labelCounter))
+
+    # Loop Body Begin
+    intermediateOutput.append(".LABEL" + str(labelCounter))
+    nextValue = next(tokenizedInput)
+    while nextValue != '}':
+        intermediateOutput.append(blockDeclaration(tokenizedInput,nextValue))
+        nextValue = next(tokenizedInput)
+    intermediateOutput.append("LLEND" + str(labelCounter))
+
+    # Loop End
+    intermediateOutput.append("LOOP END")
+    return intermediateOutput
+
 
 # Process : Tokenized Parsed String to Assembly Conversion
 def convertTokens(tokenizedInput):
@@ -522,6 +572,9 @@ def convertTokens(tokenizedInput):
             # Scenario 3 : When Statement
             elif value == "when":
                 tokenizedOutput.append(whenStatement(tokenizedInputIter, value))
+            # Scenario 4 : Loop Statement
+            elif value == "loop":
+                tokenizedOutput.append(loopStatement(tokenizedInputIter, value))
     return tokenizedOutput
 
 
@@ -541,7 +594,7 @@ def main():
     global labelCounter
     labelCounter = 0
     # Parse Input
-    tokenizedInput = parseSDK("when((a > 20) && ((a < 30) || (a < 25))){ integer a. } elseWhen (a == b){  integer f. } else{ integer g. }")
+    tokenizedInput = parseSDK("loop ((a < 50) || (b >10)){ integer a. break. }")
 
 
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
