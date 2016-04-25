@@ -13,13 +13,13 @@ def removeWhiteSpace(expression):
 # Writing to Intermediate Intermediate.sdk file
 def writeFile(my_list):
     with open("Intermediate.sdk", 'w') as f:
-        f.write("SDKSTRT" + '\n')
+        f.write("SDK STRT" + '\n')
         index = 0
         while index <= len(my_list) - 1:
             for s in my_list[index]:
                 f.write(s + '\n')
             index += 1
-        f.write("SDKEND" + '\n')
+        f.write("SDK END" + '\n')
 
 
 # Process : Scanner/Parser to generate Tokenized Output
@@ -72,7 +72,7 @@ def parseSDK(input):
     simpleStatement = pp.Forward()
     compoundStatement = pp.Forward()
     expr = pp.Forward()
-    actualParameter = pp.ZeroOrMore(pp.Optional(",") + pp.Or(numericLiteral ^ identifier ^ expr))
+    actualParameter = pp.Or(numericLiteral ^ identifier ^ expr)
     functionCallExpression = identifier + lBracs + actualParameter + rBracs
     functionCallStatement = functionCallExpression + eol
     primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false") ^ functionCallExpression)
@@ -138,7 +138,6 @@ def checkBool(l):
 
 
 def returnIntermediateOperator(sdkOperator):
-    # Function to return Operator's Intermediate Codes
     if sdkOperator == "+":
         return 'ADD'
     elif sdkOperator == "-":
@@ -153,20 +152,6 @@ def returnIntermediateOperator(sdkOperator):
         return 'AND'
     elif sdkOperator == "||":
         return 'OR'
-    elif sdkOperator == ">":
-        return 'GT'
-    elif sdkOperator == "<":
-        return 'LT'
-    elif sdkOperator == ">=":
-        return 'GE'
-    elif sdkOperator == "<=":
-        return 'LE'
-    elif sdkOperator == "==":
-        return 'EEQL'
-    elif sdkOperator == "!=":
-        return 'NEQL'
-    elif sdkOperator == "!":
-        return 'NOT'
 
 
 def typeNameIntermediateConvert(typeNames):
@@ -178,38 +163,15 @@ def typeNameIntermediateConvert(typeNames):
         return "FLT"
 
 
-def callFunctionIntermediate(callStatement):
-    # Function Call to Intermediate Code
-    intermediateString = callStatement.split("(")
-    returnString = 'CALL ' + intermediateString[0] + '\n'
-    intermediateStr = intermediateString[1].replace(")", "")
-    searchObj = re.search(r',', intermediateString[1])
-    if searchObj:
-        rightSide = intermediateStr.split(",")
-        for parameter in rightSide:
-            returnString += 'PAR ' + parameter + '\n'
-    elif intermediateString[1] != ')':
-        # Case when only 1 parameter exist
-        returnString += 'PAR ' + intermediateStr + '\n'
-    return returnString
-
-
 def assignStatement(assStatement):
-    # Function for Assigning Statement
     # Input is an assignment statement like  a = b + c
     intermediateAssign = 'STRTEXP\n'
-    searchObj = re.search(r'[a-zA-Z]+\([0-9,]*[True]*[False]*\)', assStatement)
-    assStatement = re.sub(r'[a-zA-Z]+\([0-9,]*[True]*[False]*\)', '@', assStatement)
-    intermediateString = assStatement.split("=")
-    postfixExpr = infixToPostfixConv(removeWhiteSpace(intermediateString[1]))
-    for s in postfixExpr.split():
+    postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement)).split()
+    for s in postfixExpr:
         if isOperator(s):
             intermediateAssign += returnIntermediateOperator(s) + "\n"
-        elif s == '@':
-            intermediateAssign += callFunctionIntermediate(searchObj.group())
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
-    intermediateAssign += "EQL " + intermediateString[0] + "\n"
     intermediateAssign += 'ENDEXP'
     return intermediateAssign
 
@@ -220,6 +182,7 @@ def varDeclaration(tokenizedInput, value):
     # Input : ['integer', 'a', ',', 'b', ':=', '10', ',', 'c', ':=', '20', '.']
     # Output :
     # TYP INT a
+    # EQL NULL
     # TYP INT b
     # STRTEXP
     # PUSH 10
@@ -308,8 +271,8 @@ def blockDeclaration(tokenizedInput, value):
                 commaFlag = 0
                 rightSide = ''
                 nextValue = next(tokenizedInput)
-                while nextValue != "." and commaFlag == 0:
-                    rightSide += nextValue
+                if nextValue == commaLit:
+                    commaFlag = 1
                     nextValue = next(tokenizedInput)
                     if nextValue == commaLit:
                         commaFlag = 1
@@ -329,10 +292,9 @@ def blockDeclaration(tokenizedInput, value):
     elif nextValue == "break":
         nextValue = next(tokenizedInput)
         intermediateOutput += 'BREAK'
-
     # Return Error
-    # if nextValue != ".":
-    #   intermediateOutput = "SDK ERROR : Next Value = " + rightSide
+    if nextValue != ".":
+        intermediateOutput = "SDK ERROR : Next Value = " + rightSide
     return intermediateOutput
 
 
@@ -349,7 +311,7 @@ def functionDeclaration(tokenizedInput, value):
     # FUN sampleFunction INT
     # PAR INT param1
     # PAR BOOL param2
-    # STRTFUN
+    # STRT
     # TYP INT x
     # STRTEXP
     # PUSH 10
@@ -386,17 +348,14 @@ def functionDeclaration(tokenizedInput, value):
         nextValue = next(tokenizedInput)
 
     # Function Body
-    intermediateOutput.append("STRTFUN")
+    intermediateOutput.append("STRT")
     nextValue = next(tokenizedInput)
     while nextValue != 'return':
-        # Handles Assignment Operations
-        if nextValue in typeName or nextValue != '.':
+        if nextValue in typeName:
             intermediateOutput.append(blockDeclaration(tokenizedInput, nextValue))
-            # else:
-            # print nextValue
         nextValue = next(tokenizedInput)
     intermediateOutput.append("RTRN " + next(tokenizedInput))
-    intermediateOutput.append("ENDFUN")
+    intermediateOutput.append("END")
 
     # Return Error
     nextValue = next(tokenizedInput)
@@ -593,18 +552,15 @@ def main():
     global lcrBracs
     global labelCounter
     labelCounter = 0
+
     # Parse Input
     tokenizedInput = parseSDK("loop ((a < 50) || (b >10)){ integer a. break. }")
 
-
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
-
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
     # print result
     # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
-    print tokenizedInput
-
     # Sample Exception handling
     # raise Exception('Incorrect data')
     # print tokenizedInput
