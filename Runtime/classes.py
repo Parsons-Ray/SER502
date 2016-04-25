@@ -267,7 +267,7 @@ class SymbolTable:
             print "Compilation Error: Identifier not found"
 
     def __repr__(self):
-        return "table: {0}".format(self.tbl)
+        return "table: {0}, prevScope: {1}".format(self.tbl, self.prevScope)
 class Label:
 
     def __init__(self, name, pc):
