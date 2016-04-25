@@ -4,9 +4,9 @@ import re
 #Globals
 #highlevel code looks like:
     #integer a, b := 10, c:=20.
-
+global current_scope
 current_scope = "GLBL"
-# tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "10:T", "PAR", "20", "SDK"])
+tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "b", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "30", "PAR", "20", "SDKEND"])
 labelPat = r'\.LABEL[0-9]*'
 whenEndPat = r'\.WLEND[0-9]*'
 # curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
@@ -15,20 +15,12 @@ whenEndPat = r'\.WLEND[0-9]*'
 # runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", "LOOP", ".LABEL2", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "12", "LT", "JEQ", "LABEL2", "WHEN",".LABEL3", "TYP", "INT", "a", "PUSH", "13", "EQL", "a", "WLEND3", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX","JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
 
-tokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "SDKEND"])
-runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "SDKEND"])
+#tokens = Iterator(["SDKSTRT","WHEN","STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
+runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
 global glbl_sym_table
-glbl_sym_table = GlblSymTab()
+glbl_sym_table = SymbolTable('GLBL', None)
 symtab_add(glbl_sym_table)
 stack = Stack()
-
-def LABL_TRACK():
-    while runTokens.current() is not "SDKEND":
-        label = runTokens.current()
-        if re.match(labelPat, label):
-            current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1)
-            # ltermnum = label[:-1]
-        runTokens.next()
 
 def TYP():
     tokens.next() #this should pop off "TYP"
@@ -54,7 +46,15 @@ def CALL():
     tokens.next() #pop CALL
     currentFunction = dict_of_functions[tokens.next()]#functions should only be declared in global
     while tokens.next() is "PAR": #add all parameters
-        currentFunction.setParamValues(tokens.next())
+        nextValue = tokens.next()
+
+        try:
+            if dict_of_symbolTabs[current_scope].lookup(nextValue) is not None:
+                nextValue = dict_of_symbolTabs[current_scope].lookup(nextValue).getValue()
+        except ValueError:
+            print("value Not Found")
+
+        currentFunction.setParamValues(nextValue)
     currentFunction.returnPC(tokens.getCounter()-1)#set return PC
     print("returnPC: {0}".format(tokens.getCounter()))
 
@@ -83,22 +83,13 @@ def LABL_TRACK():
     while runTokens.current() is not "SDKEND":
         label = runTokens.current()
         if re.match(labelPat, label):
-            current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1)
+            global current_scope
+            print "Current Scope: " + current_scope
+            current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
+            current_scope = label.replace(".", "")
         runTokens.next()
-    # for key in dict_of_labels.keys():
-    #     pc, name = dict_of_labels.get(key).getStart(), dict_of_labels.get(key).name
-    #     print name + " Starts at ---->" + str(pc)
-        # while curr_labeltokens.current() is not "LEND"+ltermnum:
-            # current_label.lInstrQueue.append(curr_labeltokens.current())
-            # curr_labeltokens.next()
-        # print label+" ~~~> Instr Queue: "+ str(current_label.lInstrQueue)
-        # print current_label.lSymbTab.getTable().keys()
-        # for lInstrQueue
-    # instrEvaluator =  Iterator(current_label.lInstrQueue
-    # else:
-    #     print "Label Error: "+ label
-
+    current_scope = 'GLBL'
 
 
 def STARTEX():
@@ -172,7 +163,6 @@ def STARTEX():
             try:
                 print current_scope
                 varObj = dict_of_symbolTabs[current_scope].lookup(tokens.next())
-                print dict_of_symbolTabs[current_scope]
                 varObj.setValue(stack.pop())
             except ValueError:
                 print("Identifier not found")
@@ -192,6 +182,7 @@ def FUNEND():
     finishedFunction = stack.pop()
     print("here: {0}".format(finishedFunction.getRetrunPC()))
     tokens.setCounter(finishedFunction.getRetrunPC())
+    print dict_of_symbolTabs
 
 def LABL():
     lname = tokens.current().replace(".", "")
@@ -244,10 +235,7 @@ def PRNT():
 
 def main():
     LABL_TRACK()
-    dict_of_symbolTabs[current_scope] = GlblSymTab()
     while tokens.current() is not "SDKEND":
-        # print("dict_of_symbolTabs: {0}".format(dict_of_symbolTabs))
-        # print current_scope+ "----> " + tokens.current()
         nextToken = tokens.current()
         print(nextToken)
         if nextToken is "TYP":
