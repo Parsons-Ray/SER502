@@ -8,15 +8,18 @@ import re
 current_scope = "GLBL"
 # tokens = Iterator(["FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "BOOL", "param2", "STRT", "TYP", "INT", "a", "a", "EQL", "10", "EOL", "END"])
 labelPat = r'\.LABEL[0-9]*'
+whenEndPat = r'\.WLEND[0-9]*'
 # glbl_vardict = {} #this contains all our variables and their values
 # glbl_labeldict = {} #this contains all the labels and lines inside them
 # curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
 tokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND2", "SDKEND"])
-runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "JMP", "LABEL2", "LEND2", "SDKEND"])
+runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", "LOOP", ".LABEL2", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "12", "LT", "JEQ", "LABEL2", "WHEN",".LABEL3", "TYP", "INT", "a", "PUSH", "13", "EQL", "a", "WLEND3", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
+symtab_add("GLBL")
 stack = Stack()
 
 
 # def TYP():
+
 #     #create varaible
 #     while (tokens.next() is not "EOL"): #this should also pop off "TYP" along with "EOL"
 #         stack.push(tokens.next()) #pushes "INT, FLT, BOOL" onto stack
@@ -60,9 +63,11 @@ def LABL_TRACK():
     #     print "Label Error: "+ label
 
 def TYP():
-    varType = tokens.current()
-    varName = tokens.next()
-    variable = Variable()
+    print "type def"
+    tokens.next()
+    # varType = tokens.current()
+    # varName = tokens.next()
+    # variable = Variable()
 
 
 def LABL():
@@ -75,7 +80,7 @@ def CMP():
     if stack.pop() >= 1:
         tokens.next()
     else:
-        while tokens.current() is not "LEND"+current_scope[:-1]:
+        while tokens.current() is not "LOOPLEND"+current_scope[:-1]:
             tokens.next()
 def JMP():
     label = tokens.next()
@@ -89,17 +94,21 @@ def JEQ():
         current_scope = tokens.next()
         tokens.setCounter(dict_of_labels.get(current_scope).getStart())
     else:
-        while tokens.current() is not "LEND"+ current_scope[:-1]:
+        while tokens.current() is not "WLEND"+ current_scope[:-1]:
             tokens.next()
 
-def JNEQ():
-    if stack.pop() == 0:
-        global current_scope
-        current_scope = tokens.next()
-        tokens.setCounter(dict_of_labels.get(current_scope).getStart())
-    else:
-        while tokens.current() is not "LEND"+ current_scope[:-1]:
-            tokens.next()
+def WLEND():
+    while tokens.current() is not "ENDW":
+        tokens.next()
+
+# def JNEQ():
+#     if stack.pop() == 0:
+#         global current_scope
+#         current_scope = tokens.next()
+#         tokens.setCounter(dict_of_labels.get(current_scope).getStart())
+#     else:
+#         while tokens.current() is not "LEND"+ current_scope[:-1]:
+#             tokens.next()
 
 def main():
     # nextToken = tokens.current()
@@ -107,7 +116,6 @@ def main():
     #     TYP()
     # elif nextToken is "FUN":
     #     FUN()
-    print " asdasdasd"
     LABL_TRACK()
     print "lbl track"
     print dict_of_labels.keys()
@@ -127,6 +135,8 @@ def main():
                 JEQ()
             elif nextToken is "JNEQ":
                 JNEQ()
+            elif re.match(whenEndPat, nextToken):
+                WLEND()
             else:
                 tokens.next()
             # elif nextToken is "INT" or "FLT" or "BOOL":
