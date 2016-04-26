@@ -8,7 +8,7 @@ import copy
 global current_scope
 current_scope = "GLBL"
 # tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "b", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "30", "PAR", "20", "SDKEND"])
-tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "CALL", "sampleFunction", "PAR", "a", "PAR", "20", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDKEND"])
+# tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "CALL", "sampleFunction", "PAR", "a", "PAR", "20", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDKEND"])
 labelPat = r'\.LABEL[0-9]*'
 whenEndPat = r'\.WLEND[0-9]*'
 lendPat = r'LEND[0-9]*'
@@ -18,15 +18,17 @@ lendPat = r'LEND[0-9]*'
 # runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", "LOOP", ".LABEL2", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "12", "LT", "JEQ", "LABEL2", "WHEN",".LABEL3", "TYP", "INT", "a", "PUSH", "13", "EQL", "a", "LEND3", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX","JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
 
-tokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "STRTEX", "PUSH", "0", "EQL", "a", "ENDEX", "TYP", "INT", "counter", "STRTEX", "PUSH", "0", "EQL", "counter", "ENDEX",".LABEL1", "STRTEX", "PUSH", "a", "PUSH", "5", "LT","ENDEX", "CMP", "LOOP", "STRTEX", "PUSH", "counter", "PUSH", "1", "ADD", "ENDEX", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "2", "EEQL", "ENDEX", "JEQ", "LABEL2", ".LABEL2","STRTPRNT", "STRTEXT", "PUSH", "a", "PUSH", "29", "ADD", "ENDEX", "ENDPRNT", "LEND2", "ENDW","STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL1" , "LEND1", "LOOPLEND1", "SDKEND"])
-runTokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "STRTEX", "PUSH", "0", "EQL", "a", "ENDEX", "TYP", "INT", "counter", "STRTEX", "PUSH", "0", "EQL", "counter", "ENDEX",".LABEL1", "STRTEX", "PUSH", "a", "PUSH", "5", "LT","ENDEX", "CMP", "LOOP", "STRTEX", "PUSH", "counter", "PUSH", "1", "ADD", "ENDEX", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "2", "EEQL", "ENDEX", "JEQ", "LABEL2", ".LABEL2","STRTPRNT", "STRTEXT", "PUSH", "a", "PUSH", "29", "ADD", "ENDEX", "ENDPRNT", "LEND2", "ENDW", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL1" , "LEND1", "LOOPLEND1", "SDKEND"])
+# tokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "STRTEX", "PUSH", "0", "EQL", "a", "ENDEX", "TYP", "INT", "counter", "STRTEX", "PUSH", "0", "EQL", "counter", "ENDEX",".LABEL1", "STRTEX", "PUSH", "a", "PUSH", "5", "LT","ENDEX", "CMP", "LOOP", "STRTEX", "PUSH", "counter", "PUSH", "1", "ADD", "ENDEX", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "2", "EEQL", "ENDEX", "JEQ", "LABEL2", ".LABEL2","STRTPRNT", "STRTEXT", "PUSH", "a", "PUSH", "29", "ADD", "ENDEX", "ENDPRNT", "LEND2", "ENDW","STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL1" , "LEND1", "LOOPLEND1", "SDKEND"])
+# runTokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "STRTEX", "PUSH", "0", "EQL", "a", "ENDEX", "TYP", "INT", "counter", "STRTEX", "PUSH", "0", "EQL", "counter", "ENDEX",".LABEL1", "STRTEX", "PUSH", "a", "PUSH", "5", "LT","ENDEX", "CMP", "LOOP", "STRTEX", "PUSH", "counter", "PUSH", "1", "ADD", "ENDEX", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "2", "EEQL", "ENDEX", "JEQ", "LABEL2", ".LABEL2","STRTPRNT", "STRTEXT", "PUSH", "a", "PUSH", "29", "ADD", "ENDEX", "ENDPRNT", "LEND2", "ENDW", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL1" , "LEND1", "LOOPLEND1", "SDKEND"])
 # tokens = Iterator(["SDKSTRT","WHEN","STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", ".LABEL3", "TYP", "INT", "z", "STRTEX", "PUSH", "120", "EQL", "z", "ENDEX", "LEND3", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "TYP", "BOOL", "vboo", "STRTEX", "PUSH", "1", "EQL", "vboo", "ENDEX", "ENDEX", "TYP", "FLT", "vfl", "STRTEX", "PUSH", "10.23", "EQL", "vfl", "ENDEX", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", ".LABEL3", "TYP", "INT", "z", "STRTEX", "PUSH", "120", "EQL", "z", "ENDEX", "LEND3", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "TYP", "BOOL", "vboo", "STRTEX", "PUSH", "1", "EQL", "vboo", "ENDEX", "ENDEX", "TYP", "FLT", "vfl", "STRTEX", "PUSH", "10.23", "EQL", "vfl", "ENDEX", "ENDEX", "SDKEND"])
 
 
 #tokens = Iterator(["SDKSTRT","WHEN","STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
-runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
-
+# runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
+filename = file_processor("../Compiler/intermediate.sdk")
+tokens = Iterator(filename.getToks())
+runTokens = Iterator(filename.getToks())
 global glbl_sym_table
 glbl_sym_table = SymbolTable('GLBL', None)
 symtab_add(glbl_sym_table)
@@ -91,24 +93,24 @@ def RTRN():
     tokens.setcounter(exitedFun.getReturnPC())
 
 def LABL_TRACK():
-    while runTokens.current() is not "SDKEND":
+    while runTokens.current() != "SDKEND":
         label = runTokens.current()
         global current_scope
         if re.match(labelPat, label):
             global current_scope
-            print "Current Scope: " + current_scope
+            # print "Current Scope: " + current_scope
             current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
             current_scope = label.replace(".", "")
         if re.match(lendPat, label):
-            print "Exit Scope: " + current_scope
+            # print "Exit Scope: " + current_scope
             current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
         runTokens.next()
     current_scope = 'GLBL'
 
 
 def STARTEX():
-    while tokens.current() is not "ENDEX":
+    while tokens.current() != "ENDEX":
         nextToken = tokens.next()
         if nextToken == "PUSH":
             varName = tokens.next()
@@ -210,13 +212,14 @@ def CMP():
         tokens.next()
     else:
         global current_scope
-        while tokens.current() is not "LOOPLEND"+str(current_scope[-1:]):
+        while tokens.current() != "LOOPLEND"+str(current_scope[-1:]):
             tokens.next()
 def JMP():
     tokens.next()
     label = tokens.next()
     global current_scope
     current_scope = label
+    dict_of_symbolTabs[label].emptyTable()
     tokens.setCounter(dict_of_labels[label].getStart())
 
 def JEQ():
@@ -237,9 +240,9 @@ def JEQ():
 
 
 def WLEND():
-    while tokens.current() is not "ENDW":
+    while tokens.current() != "ENDW":
         tokens.next()
-    if tokens.current() is "ENDW":
+    if tokens.current() == "ENDW":
         global current_scope
         current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
     # global current_scope
@@ -256,29 +259,30 @@ def PRNT():
     tokens.next()
 
 def main():
+    print filename.getToks()
     LABL_TRACK()
-    while tokens.current() is not "SDKEND":
+    while tokens.current() != "SDKEND":
         nextToken = tokens.current()
         print(nextToken)
-        if nextToken is "TYP":
+        if nextToken == "TYP":
             TYP()
-        elif nextToken is "FUN":
+        elif nextToken == "FUN":
             FUN()
-        elif nextToken is "CALL":
+        elif nextToken == "CALL":
             CALL()
-        elif nextToken is "RTRN":
+        elif nextToken == "RTRN":
             RTRN()
-        elif nextToken is "STRTEX":
+        elif nextToken == "STRTEX":
             STARTEX()
-        elif nextToken is "FUNEND":
+        elif nextToken == "FUNEND":
             FUNEND()
         elif re.match(labelPat, nextToken):
             LABL()
-        elif nextToken is "CMP":
+        elif nextToken == "CMP":
             CMP()
-        elif nextToken is "JMP":
+        elif nextToken == "JMP":
             JMP()
-        elif nextToken is "JEQ":
+        elif nextToken == "JEQ":
             JEQ()
         # elif nextToken is "JNEQ":
         #     JNEQ()
