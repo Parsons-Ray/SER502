@@ -1,5 +1,6 @@
 from classes import *
 import re
+import copy
 
 #Globals
 #highlevel code looks like:
@@ -7,6 +8,7 @@ import re
 global current_scope
 current_scope = "GLBL"
 # tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "b", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "30", "PAR", "20", "SDKEND"])
+tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "CALL", "sampleFunction", "PAR", "a", "PAR", "20", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDKEND"])
 labelPat = r'\.LABEL[0-9]*'
 whenEndPat = r'\.WLEND[0-9]*'
 lendPat = r'LEND[0-9]*'
@@ -15,10 +17,16 @@ lendPat = r'LEND[0-9]*'
 # tokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "a", "PUSH", "10", "EQL", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "b", "PUSH", "15", "EQL", "ENDEX", "LOOP", ".LABEL2", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "PUSH", "a", "PUSH", "a", "ADD", "EQL", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "12", "LT", "JEQ", "LABEL2", "WHEN",".LABEL3", "TYP", "INT", "a", "PUSH", "13", "EQL", "a", "LEND3", "JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT","TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", ".LABEL2", "LOOP", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "CMP", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX","JMP", "LABEL2", "LOOPLEND2", "SDKEND"])
+
 tokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "STRTEX", "PUSH", "0", "EQL", "a", "ENDEX", "TYP", "INT", "counter", "STRTEX", "PUSH", "0", "EQL", "counter", "ENDEX",".LABEL1", "STRTEX", "PUSH", "a", "PUSH", "5", "LT","ENDEX", "CMP", "LOOP", "STRTEX", "PUSH", "counter", "PUSH", "1", "ADD", "ENDEX", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "2", "EEQL", "ENDEX", "JEQ", "LABEL2", ".LABEL2","STRTPRNT", "STRTEXT", "PUSH", "a", "PUSH", "29", "ADD", "ENDEX", "ENDPRNT", "LEND2", "ENDW","STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL1" , "LEND1", "LOOPLEND1", "SDKEND"])
 runTokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "STRTEX", "PUSH", "0", "EQL", "a", "ENDEX", "TYP", "INT", "counter", "STRTEX", "PUSH", "0", "EQL", "counter", "ENDEX",".LABEL1", "STRTEX", "PUSH", "a", "PUSH", "5", "LT","ENDEX", "CMP", "LOOP", "STRTEX", "PUSH", "counter", "PUSH", "1", "ADD", "ENDEX", "WHEN", "STRTEX", "PUSH", "a" , "PUSH", "2", "EEQL", "ENDEX", "JEQ", "LABEL2", ".LABEL2","STRTPRNT", "STRTEXT", "PUSH", "a", "PUSH", "29", "ADD", "ENDEX", "ENDPRNT", "LEND2", "ENDW", "STRTEX", "PUSH", "a", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "JMP", "LABEL1" , "LEND1", "LOOPLEND1", "SDKEND"])
 # tokens = Iterator(["SDKSTRT","WHEN","STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", ".LABEL3", "TYP", "INT", "z", "STRTEX", "PUSH", "120", "EQL", "z", "ENDEX", "LEND3", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "TYP", "BOOL", "vboo", "STRTEX", "PUSH", "1", "EQL", "vboo", "ENDEX", "ENDEX", "TYP", "FLT", "vfl", "STRTEX", "PUSH", "10.23", "EQL", "vfl", "ENDEX", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", ".LABEL3", "TYP", "INT", "z", "STRTEX", "PUSH", "120", "EQL", "z", "ENDEX", "LEND3", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "TYP", "BOOL", "vboo", "STRTEX", "PUSH", "1", "EQL", "vboo", "ENDEX", "ENDEX", "TYP", "FLT", "vfl", "STRTEX", "PUSH", "10.23", "EQL", "vfl", "ENDEX", "ENDEX", "SDKEND"])
+
+
+#tokens = Iterator(["SDKSTRT","WHEN","STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
+runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
+
 global glbl_sym_table
 glbl_sym_table = SymbolTable('GLBL', None)
 symtab_add(glbl_sym_table)
@@ -45,11 +53,12 @@ def FUN():
     tokens.next()#pop End
 
 def CALL():
+    print dict_of_symbolTabs[current_scope]
+    stop = raw_input()
     tokens.next() #pop CALL
-    currentFunction = dict_of_functions[tokens.next()]#functions should only be declared in global
+    currentFunction = copy.deepcopy(dict_of_functions[tokens.next()])#functions should only be declared in global
     while tokens.next() is "PAR": #add all parameters
         nextValue = tokens.next()
-
         try:
             if dict_of_symbolTabs[current_scope].lookup(nextValue) is not None:
                 nextValue = dict_of_symbolTabs[current_scope].lookup(nextValue).getValue()
@@ -57,6 +66,7 @@ def CALL():
             print("value Not Found")
 
         currentFunction.setParamValues(nextValue)
+    temp = tokens.getCounter()
     currentFunction.returnPC(tokens.getCounter()-1)#set return PC
     print("returnPC: {0}".format(tokens.getCounter()))
 
@@ -85,6 +95,7 @@ def LABL_TRACK():
         label = runTokens.current()
         global current_scope
         if re.match(labelPat, label):
+            global current_scope
             print "Current Scope: " + current_scope
             current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
