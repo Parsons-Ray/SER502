@@ -35,6 +35,14 @@ def symtab_del(name):
 
 global glbl_sym_table
 
+class file_processor:
+    def __init__(self, text_file):
+        self.filename = text_file
+
+    def getToks(self):
+        return [word for line in open(self.filename, 'r') for word in line.split()]
+
+
 class Stack:
      def __init__(self):
          self.items = []
@@ -97,14 +105,14 @@ class Variable:
         self.valueType = valueType #should be string ("INT", "FLT", "BOOL")
 
     def setValue(self, value):#check and set the value to the appropriate type.
-        if value is "NULL":
+        if value == "NULL":
             self.value = None
-        elif self.valueType is "INT":
+        elif self.valueType == "INT":
             self.value = int(value)
-        elif self.valueType is "FLT":
+        elif self.valueType == "FLT":
             self.value = float(value)
-        elif self.valueType is "BOOL":
-            if value is "true" or value is "false":
+        elif self.valueType == "BOOL":
+            if value == "true" or value == "false":
                 self.value = value
 
     def __repr__(self):
@@ -134,7 +142,7 @@ class Function:
 
     def setParamValues(self, value):
         for param in self.order:
-            if self.params[param].getValue() is "NULL":
+            if self.params[param].getValue() == "NULL":
                 self.params[param].setValue(value)
                 break
 
@@ -181,8 +189,11 @@ class SymbolTable:
         except ValueError:
             print "Compilation Error: Identifier exists"
 
-    def getScope(self):
-        return self.scope_hierarchy
+    def getPrevScope(self):
+        return self.prevScope
+
+    # def getScope(self):
+    #     return self.scope_hierarchy
 
     def getTable(self):
         return self.tbl
@@ -198,8 +209,12 @@ class SymbolTable:
             else:
                 return None
 
+    def emptyTable(self):
+        self.tbl.clear()
+
     def __repr__(self):
         return "table: {0}, prevScope: {1}".format(self.tbl, self.prevScope)
+
 class Label:
 
     def __init__(self, name, pc, prevScope):
