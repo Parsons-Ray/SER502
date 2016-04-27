@@ -138,6 +138,7 @@ def checkBool(l):
 
 
 def returnIntermediateOperator(sdkOperator):
+    # Return Operator's Intermediate Symbol
     if sdkOperator == "+":
         return 'ADD'
     elif sdkOperator == "-":
@@ -169,6 +170,7 @@ def returnIntermediateOperator(sdkOperator):
 
 
 def typeNameIntermediateConvert(typeNames):
+    # Return Intermediate Code for TypeNames
     if typeNames == "integer":
         return "INT"
     elif typeNames == "boolean":
@@ -179,14 +181,14 @@ def typeNameIntermediateConvert(typeNames):
 
 def assignStatement(assStatement):
     # Input is an assignment statement like  a = b + c
-    intermediateAssign = 'STRTEXP\n'
+    intermediateAssign = 'STRTEX\n'
     postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement)).split()
     for s in postfixExpr:
         if isOperator(s):
             intermediateAssign += returnIntermediateOperator(s) + "\n"
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
-    intermediateAssign += 'ENDEXP'
+    intermediateAssign += 'ENDEX'
     return intermediateAssign
 
 
@@ -198,15 +200,15 @@ def varDeclaration(tokenizedInput, value):
     # TYP INT a
     # EQL NULL
     # TYP INT b
-    # STRTEXP
+    # STRTEX
     # PUSH 10
     # EQL b
-    # ENDEXP
+    # ENDEX
     # TYP INT c
-    # STRTEXP
+    # STRTEX
     # PUSH 20
     # EQL c
-    # ENDEXP
+    # ENDEX
     # EOL
     intermediateOutput = list()
     if value == "integer":
@@ -327,22 +329,22 @@ def functionDeclaration(tokenizedInput, value):
     # PAR BOOL param2
     # STRT
     # TYP INT x
-    # STRTEXP
+    # STRTEX
     # PUSH 10
     # EQL x
-    # ENDEXP
+    # ENDEX
     # TYP INT y
-    # STRTEXP
+    # STRTEX
     # PUSH 20
     # EQL y
-    # ENDEXP
+    # ENDEX
     # TYP INT z
-    # STRTEXP
+    # STRTEX
     # PUSH x
     # PUSH y
     # ADD
     # EQL z
-    # ENDEXP
+    # ENDEX
     # ENDFUN
     # RTRN z
     # END
@@ -390,13 +392,13 @@ def whenCondition(tokenizedInput, value):
     condition = re.sub(r'==', '@', condition)
     postfixExpr = infixToPostfixConv(removeWhiteSpace(condition))
     postfixExpr = re.sub(r'@', '==', postfixExpr)
-    intermediateAssign += "STRTEXP" + "\n"
+    intermediateAssign += "STRTEX" + "\n"
     for s in postfixExpr.split():
         if isOperator(s):
             intermediateAssign += returnIntermediateOperator(s) + "\n"
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
-    intermediateAssign += "ENDEXP"
+    intermediateAssign += "ENDEX"
     return intermediateAssign
 
 # Function to translate When statement's body
@@ -418,7 +420,7 @@ def whenStatement(tokenizedInput, value):
     # '{', 'integer', 'g', '.', '}']
     # Output :
     # WHEN
-    # STRTEXP
+    # STRTEX
     # PUSH a
     # PUSH 2
     # PUSH a
@@ -428,16 +430,16 @@ def whenStatement(tokenizedInput, value):
     # PUSH 25
     # OR
     # AND
-    # ENDEXP
+    # ENDEX
     # JEQ LABEL1
     # .LABEL1
     # TYPE INT a
     # WLEND1
-    # STRTEXP
+    # STRTEX
     # PUSH a
     # PUSH b
     # EEQL
-    # ENDEXP
+    # ENDEX
     # JEQ LABEL2
     # .LABEL2
     # TYP INT f
@@ -489,7 +491,7 @@ def loopStatement(tokenizedInput, value):
     # ['loop', '(', '(', 'a', '<', '50', ')', '||', '(', 'b', '>', '10', ')', ')', '{', 'integer', 'a', '.', 'break', '.', '}']
     # Output :
     # LOOP
-    # STRTEXP
+    # STRTEX
     # PUSH a
     # PUSH 50
     # LT
@@ -497,7 +499,7 @@ def loopStatement(tokenizedInput, value):
     # PUSH 10
     # GT
     # OR
-    # ENDEXP
+    # ENDEX
     # JEQ LABEL1
     # .LABEL1
     # TYP INT a
@@ -528,6 +530,28 @@ def loopStatement(tokenizedInput, value):
     intermediateOutput.append("LOOP END")
     return intermediateOutput
 
+# Function to convert Print statments
+def printStatement(tokenizedInput, value):
+    # Eg: print a .
+    # Input :
+    # ['print', 'a', '.']
+    # Output :
+    # STRTPRNT
+    # STRTEX
+    # PUSH a
+    # ENDEX
+    # ENDPRNT
+    global labelCounter
+    intermediateOutput = list()
+    # Print statement declaration
+    intermediateOutput.append("STRTPRNT")
+    intermediateOutput.append("STRTEX")
+    intermediateOutput.append("PUSH " + next(tokenizedInput))
+    intermediateOutput.append("ENDEX")
+    # Print end
+    intermediateOutput.append("ENDPRNT")
+    next(tokenizedInput)
+    return intermediateOutput
 
 # Process : Tokenized Parsed String to Assembly Conversion
 def convertTokens(tokenizedInput):
@@ -549,6 +573,9 @@ def convertTokens(tokenizedInput):
             # Scenario 4 : Loop Statement
             elif value == "loop":
                 tokenizedOutput.append(loopStatement(tokenizedInputIter, value))
+            # Scenario 5 : Print Statement
+            elif value == "print":
+                tokenizedOutput.append(printStatement(tokenizedInputIter,value))
     return tokenizedOutput
 
 
@@ -569,12 +596,14 @@ def main():
     labelCounter = 0
 
     # Parse Input
-    tokenizedInput = parseSDK("loop ((a < 50) || (b >10)){ integer a. break. }")
+    tokenizedInput = parseSDK("print a .")
+
+    # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}
 
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
-    # print result
+    print tokenizedInput
     # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
     # Sample Exception handling
     # raise Exception('Incorrect data')
