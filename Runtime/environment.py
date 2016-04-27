@@ -54,8 +54,10 @@ isInExpression = False
 global isInFunction
 isInFunction = False
 current_scope = "GLBL"
+global recentPopFun
 
 def TYP():
+    global current_scope
     tokens.next() #this should pop off "TYP"
     varType = tokens.next() #pushes "INT, FLT, BOOL" onto stack
     varID = tokens.next() #variable identifier ("a", "b", "c")
@@ -99,7 +101,7 @@ def CALL():
 
     currentFunction.setName(name + str(counter))
 
-    symbTable = SymbolTable(name, current_scope)
+    symbTable = SymbolTable(name + str(counter), current_scope)
     for key in currentFunction.getParams():
         symbTable.add(key, currentFunction.getParams()[key])
 
@@ -115,9 +117,12 @@ def CALL():
 
 def RTRN():
     global current_scope
-
+    global isInExpression
+    global recentPopFun
+    print "Is in expression: " + str(isInExpression)
     tokens.next() #pop RTRN
     exitedFun = stack.pop() #pop the function from the stack
+    recentPopFun = copy.deepcopy(exitedFun)
     stack.push(dict_of_symbolTabs[exitedFun.getName()].lookup(tokens.next()).getValue()) #push the returned value
     tokens.setCounter(exitedFun.getReturnPC())
     current_scope = dict_of_symbolTabs[exitedFun.getName()].getPrevScope()
@@ -230,7 +235,10 @@ def STARTEX():
         elif nextToken == "CALL":
             #tokens.setCounter(tokens.getCounter()-1)
             CALL()
-            isInExpression = False
+            global recentPopFun
+            if recentPopFun.getName()[-1:] == 0:
+                print "RECENT POP FUN: " + recentPopFun.getName()
+                isInExpression = False
 
     tokens.next()
 
@@ -284,7 +292,9 @@ def WLEND():
         tokens.next()
     if tokens.current() == "ENDW":
         global current_scope
-        current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
+        #TODO: check this next line. Is it needed? because it breaks when you hit ENDW but never entered the when.
+        #current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
+
     # global current_scope
     # current_scope = dict_of_symbolTabs.get(current_scope).getPrevScope()
 
