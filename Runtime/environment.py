@@ -7,8 +7,20 @@ import copy
     #integer a, b := 10, c:=20.
 global current_scope
 current_scope = "GLBL"
-# tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "b", "EQL", "a", "ENDEX", "FUNEND", "CALL", "sampleFunction", "PAR", "30", "PAR", "20", "SDKEND"])
-# tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "CALL", "sampleFunction", "PAR", "a", "PAR", "20", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDKEND"])
+
+# - - - - - - - - - - - - - - - - - - -Kevin - - - - - - - - - - - - - - - - - - - - - -
+# tokens = Iterator(["SDKSTRT",
+# "STRT", "TYP","INT", "b",
+# "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX",
+# "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2",
+#         "STRT", "TYP", "INT", "a",
+#         "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD","EQL", "a", "ENDEX",
+# #        "CALL", "sampleFunction", "PAR", "a", "PAR", "20",
+#         "RTRN", "a",
+# "FUNEND",
+#  "STRTEX", "CALL", "sampleFunction","PAR", "10", "PAR", "20", "EQL","b", "ENDEX", "SDKEND"])
+
+#- - - - - - - - - - - - - - - - - - - -Shashank- - - - - - - - - - -  - -- - - - - - - - -
 labelPat = r'\.LABEL[0-9]*'
 whenEndPat = r'\.WLEND[0-9]*'
 lendPat = r'LEND[0-9]*'
@@ -26,13 +38,19 @@ lendPat = r'LEND[0-9]*'
 
 #tokens = Iterator(["SDKSTRT","WHEN","STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX",  "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
 # runTokens = Iterator(["SDKSTRT", "WHEN", "STRTEX", "PUSH" , "1", "PUSH", "1", "EEQL","ENDEX", "JEQ", "LABEL0", ".LABEL0", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "TYP", "INT", "b", "STRTEX", "PUSH", "15", "EQL", "b","ENDEX", "WHEN", "STRTEX", "PUSH", "a", "PUSH", "b", "LT", "ENDEX", "JEQ", "LABEL1", ".LABEL1", "TYP", "INT", "a", "STRTEX", "PUSH", "10", "EQL", "a", "ENDEX", "PRNT", "STRTPRNT", "STRTEX", "PUSH", "a", "PUSH", "b", "ADD", "ENDEX", "ENDPRNT", "LEND1", "STRTEX", "PUSH", "a", "PUSH", "b", "GT", "JEQ", "LABEL2", ".LABEL2", "TYP", "INT", "a", "STRTEX", "PUSH", "11", "EQL", "a", "ENDEX", "LEND2", "ENDW", "TYP", "INT", "REZ", "PUSH", "REZ", "EQL", "1", "LEND0", "ENDW", "SDKEND"])
-filename = file_processor("../Compiler/intermediate.sdk")
+
+filename = file_processor("../Compiler/factorial.sdk")
 tokens = Iterator(filename.getToks())
 runTokens = Iterator(filename.getToks())
+
+
+#- - - - - - - - - - - - - - - - - - - - -All - - - - - - - - - - - - - - - - - - -
 global glbl_sym_table
 glbl_sym_table = SymbolTable('GLBL', None)
 symtab_add(glbl_sym_table)
 stack = Stack()
+global isInExpression
+isInExpression = False
 
 def TYP():
     tokens.next() #this should pop off "TYP"
@@ -51,13 +69,10 @@ def FUN():
     currentFunction.startPC = tokens.counter
     dict_of_functions[name] = currentFunction
     while tokens.current() is not "FUNEND":
-        print(tokens.next())
+        tokens.next()
     tokens.next()#pop End
 
 def CALL():
-    print dict_of_symbolTabs[current_scope]
-    stop = raw_input()
-    tokens.next() #pop CALL
     currentFunction = copy.deepcopy(dict_of_functions[tokens.next()])#functions should only be declared in global
     while tokens.next() is "PAR": #add all parameters
         nextValue = tokens.next()
@@ -68,14 +83,17 @@ def CALL():
             print("value Not Found")
 
         currentFunction.setParamValues(nextValue)
-    temp = tokens.getCounter()
+
     currentFunction.returnPC(tokens.getCounter()-1)#set return PC
-    print("returnPC: {0}".format(tokens.getCounter()))
 
     name = currentFunction.getName()
     counter = 0
     while (name + str(counter)) in dict_of_symbolTabs:
         counter += 1
+
+
+    global current_scope
+    currentFunction.setName(name + str(counter))
 
     symbTable = SymbolTable(name, current_scope)
     for key in currentFunction.getParams():
@@ -84,20 +102,23 @@ def CALL():
     dict_of_symbolTabs[name + str(counter)] = symbTable
     current_scope = name + str(counter) #set current_scope to the name of the function + number
     stack.push(currentFunction)
+
     tokens.setCounter(currentFunction.getStartPC())
+    global isInExpression
+    if isInExpression:
+        main()
 
 def RTRN():
     tokens.next() #pop RTRN
     exitedFun = stack.pop() #pop the function from the stack
-    stack.push(tokens.next()) #push the returned value
-    tokens.setcounter(exitedFun.getReturnPC())
+    stack.push(dict_of_symbolTabs[exitedFun.getName()].lookup(tokens.next()).getValue()) #push the returned value
+    tokens.setCounter(exitedFun.getReturnPC())
 
 def LABL_TRACK():
     while runTokens.current() != "SDKEND":
         label = runTokens.current()
         global current_scope
         if re.match(labelPat, label):
-            global current_scope
             # print "Current Scope: " + current_scope
             current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
@@ -110,6 +131,9 @@ def LABL_TRACK():
 
 
 def STARTEX():
+    global isInExpression
+    isInExpression = True
+
     while tokens.current() != "ENDEX":
         nextToken = tokens.next()
         if nextToken == "PUSH":
@@ -178,8 +202,9 @@ def STARTEX():
                 stack.push(1)
         elif nextToken == "EQL":
             try:
-                print current_scope
-                varObj = dict_of_symbolTabs[current_scope].lookup(tokens.next())
+                nextToken = tokens.next()
+
+                varObj = dict_of_symbolTabs[current_scope].lookup(nextToken)
                 varObj.setValue(stack.pop())
             except ValueError:
                 print("Identifier not found")
@@ -193,13 +218,17 @@ def STARTEX():
                 stack.push(1)
             else:
                 stack.push(0)
+        elif nextToken == "CALL":
+            #tokens.setCounter(tokens.getCounter()-1)
+            CALL()
+            isInExpression = False
+
     tokens.next()
+
 
 def FUNEND():
     finishedFunction = stack.pop()
-    print("here: {0}".format(finishedFunction.getRetrunPC()))
     tokens.setCounter(finishedFunction.getRetrunPC())
-    print dict_of_symbolTabs
 
 def LABL():
     lname = tokens.current().replace(".", "")
@@ -234,7 +263,6 @@ def JEQ():
         num = curr_scope[-1:]
         while tokens.current() != "LEND"+str(num) :
             tokens.next()
-        print dict_of_symbolTabs[current_scope]
         # if current_scope is not "GLBL":
         #    current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
 
@@ -259,11 +287,12 @@ def PRNT():
     tokens.next()
 
 def main():
-    print filename.getToks()
-    LABL_TRACK()
+    global isInExpression
+    if not isInExpression:
+        LABL_TRACK()
     while tokens.current() != "SDKEND":
         nextToken = tokens.current()
-        print(nextToken)
+        #print(nextToken)
         if nextToken == "TYP":
             TYP()
         elif nextToken == "FUN":
@@ -272,6 +301,8 @@ def main():
             CALL()
         elif nextToken == "RTRN":
             RTRN()
+            if isInExpression:
+                return
         elif nextToken == "STRTEX":
             STARTEX()
         elif nextToken == "FUNEND":

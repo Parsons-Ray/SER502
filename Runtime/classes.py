@@ -146,14 +146,15 @@ class Function:
                 self.params[param].setValue(value)
                 break
 
-
+    def setName(self, name):
+        self.name = name
     def getParams(self):
         return self.params
 
     def getStartPC(self):
         return self.startPC
 
-    def getRetrunPC(self):
+    def getReturnPC(self):
         return self.returnPC
 
     def getName(self):
