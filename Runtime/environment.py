@@ -51,6 +51,9 @@ symtab_add(glbl_sym_table)
 stack = Stack()
 global isInExpression
 isInExpression = False
+global isInFunction
+isInFunction = False
+current_scope = "GLBL"
 
 def TYP():
     tokens.next() #this should pop off "TYP"
@@ -64,17 +67,18 @@ def FUN():
     tokens.next()#pop FUN
     name = tokens.next() #name of function
     currentFunction = Function(tokens.next(), name) #return type
-    while (tokens.next() is "PAR"):
+    while (tokens.next() == "PAR"):
         currentFunction.addParam(tokens.next(), tokens.next())
     currentFunction.startPC = tokens.counter
     dict_of_functions[name] = currentFunction
-    while tokens.current() is not "FUNEND":
+    while tokens.current() != "FUNEND":
         tokens.next()
     tokens.next()#pop End
 
 def CALL():
     currentFunction = copy.deepcopy(dict_of_functions[tokens.next()])#functions should only be declared in global
-    while tokens.next() is "PAR": #add all parameters
+    while tokens.next() == "PAR": #add all parameters
+        global current_scope
         nextValue = tokens.next()
         try:
             if dict_of_symbolTabs[current_scope].lookup(nextValue) is not None:
@@ -92,7 +96,7 @@ def CALL():
         counter += 1
 
 
-    global current_scope
+
     currentFunction.setName(name + str(counter))
 
     symbTable = SymbolTable(name, current_scope)
@@ -101,6 +105,7 @@ def CALL():
 
     dict_of_symbolTabs[name + str(counter)] = symbTable
     current_scope = name + str(counter) #set current_scope to the name of the function + number
+    print "SCOPE HERE ----> "+current_scope
     stack.push(currentFunction)
 
     tokens.setCounter(currentFunction.getStartPC())
@@ -109,25 +114,29 @@ def CALL():
         main()
 
 def RTRN():
+    global current_scope
+
     tokens.next() #pop RTRN
     exitedFun = stack.pop() #pop the function from the stack
     stack.push(dict_of_symbolTabs[exitedFun.getName()].lookup(tokens.next()).getValue()) #push the returned value
     tokens.setCounter(exitedFun.getReturnPC())
+    current_scope = dict_of_symbolTabs[exitedFun.getName()].getPrevScope()
 
 def LABL_TRACK():
     while runTokens.current() != "SDKEND":
         label = runTokens.current()
-        global current_scope
         if re.match(labelPat, label):
+            global current_scope
             # print "Current Scope: " + current_scope
             current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
             current_scope = label.replace(".", "")
         if re.match(lendPat, label):
+            global current_scope
             # print "Exit Scope: " + current_scope
             current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
         runTokens.next()
-    current_scope = 'GLBL'
+    current_scope = "GLBL"
 
 
 def STARTEX():
@@ -233,7 +242,9 @@ def FUNEND():
 def LABL():
     lname = tokens.current().replace(".", "")
     global current_scope
+    print "LABEL SCOPE BEFORE ---> " + current_scope
     current_scope = lname
+    print "LABEL SCOPE HERE ----->" + current_scope
     tokens.next()
 
 def CMP():
@@ -255,6 +266,7 @@ def JEQ():
     if stack.pop() >= 1:
         tokens.next()
         global current_scope
+        global isInFunction
         current_scope = tokens.next()
         tokens.setCounter(dict_of_labels.get(current_scope).getStart())
     else:
@@ -292,6 +304,7 @@ def main():
         LABL_TRACK()
     while tokens.current() != "SDKEND":
         nextToken = tokens.current()
+        print nextToken
         #print(nextToken)
         if nextToken == "TYP":
             TYP()

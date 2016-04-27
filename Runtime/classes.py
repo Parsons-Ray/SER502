@@ -55,7 +55,7 @@ class Stack:
          #print("Stack: {0}".format(self.items))
 
      def pop(self):
-         #print("Stack: {0}".format(self.items))
+         print("StackPop: {0}".format(self.items))
          return self.items.pop()
 
      def peek(self):
@@ -168,7 +168,7 @@ class Function:
 
 
     def __repr__(self):
-        return "ReturnType: {0}, params: {1},  startPC: {2}, order: {3}, returnPC: {4}".format(self.returnType, self.params,  self.startPC, self.order, self.returnPC)
+        return "Name: {0} ".format(self.name)
 
 class SymbolTable:
 
@@ -195,6 +195,8 @@ class SymbolTable:
     # def getScope(self):
     #     return self.scope_hierarchy
 
+    def setPrevScope(self, scope):
+        self.prevScope = scope
     def getTable(self):
         return self.tbl
 
