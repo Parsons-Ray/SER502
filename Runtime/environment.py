@@ -7,7 +7,17 @@ import copy
     #integer a, b := 10, c:=20.
 global current_scope
 current_scope = "GLBL"
-tokens = Iterator(["SDKSTRT", "STRT", "TYP", "INT", "b", "STRTEX", "PUSH", "50", "EQL", "b", "ENDEX", "FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2", "STRT", "TYP", "INT", "a", "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD", "EQL", "a", "ENDEX", "CALL", "sampleFunction", "PAR", "a", "PAR", "20", "FUNEND", "CALL", "sampleFunction", "PAR", "10", "PAR", "20", "SDKEND"])
+tokens = Iterator(["SDKSTRT",
+"STRT", "TYP","INT", "b",
+"STRTEX", "PUSH", "50", "EQL", "b", "ENDEX",
+"FUN", "sampleFunction", "INT", "PAR", "INT", "param1", "PAR", "INT", "param2",
+        "STRT", "TYP", "INT", "a",
+        "STRTEX", "PUSH", "param1", "PUSH", "1", "ADD","EQL", "a", "ENDEX",
+#        "CALL", "sampleFunction", "PAR", "a", "PAR", "20",
+        "RTRN", "a",
+"FUNEND",
+"CALL", "sampleFunction","PAR", "10", "PAR", "20", "SDKEND"])
+
 labelPat = r'\.LABEL[0-9]*'
 whenEndPat = r'\.WLEND[0-9]*'
 # curr_labeltokens = Iterator([".LABEL1", "TYP", "INT", "res", "res", "EQL", "10","EOL", "PUSH", "res", "PUSH", "1", "ADD", "EOL" , "LEND1"])
@@ -57,8 +67,6 @@ def CALL():
             print("value Not Found")
 
         currentFunction.setParamValues(nextValue)
-    temp = tokens.getCounter()
-    #print "temp: " + str(currentFunction)
     currentFunction.returnPC(tokens.getCounter()-1)#set return PC
     print("returnPC: {0}".format(tokens.getCounter()))
 
@@ -68,6 +76,7 @@ def CALL():
         counter += 1
 
     global current_scope
+    currentFunction.setName(name + str(counter))
     symbTable = SymbolTable(name, current_scope)
     for key in currentFunction.getParams():
         symbTable.add(key, currentFunction.getParams()[key])
@@ -78,10 +87,12 @@ def CALL():
     tokens.setCounter(currentFunction.getStartPC())
 
 def RTRN():
+    print("getting setcou")
     tokens.next() #pop RTRN
     exitedFun = stack.pop() #pop the function from the stack
-    stack.push(tokens.next()) #push the returned value
-    tokens.setcounter(exitedFun.getReturnPC())
+    stack.push(dict_of_symbolTabs[exitedFun.getName()].lookup(tokens.next()).getValue()) #push the returned value
+    tokens.setCounter(exitedFun.getReturnPC())
+    print("Stack: " + str(stack))
 
 def LABL_TRACK():
     while runTokens.current() is not "SDKEND":
