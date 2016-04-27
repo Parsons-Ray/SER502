@@ -124,22 +124,6 @@ def parseSDK(input):
     return program.parseString(input)
 
 
-# Check DataTypes
-def checkInt(l):
-    if l == '0':
-        # Bug fix for 0
-        return "0"
-    return int(l)
-
-
-def checkFloat(l):
-    return float(l)
-
-
-def checkBool(l):
-    return bool(l)
-
-
 def returnIntermediateOperator(sdkOperator):
     # Return Operator's Intermediate Symbol
     if sdkOperator == "+":
@@ -184,6 +168,7 @@ def typeNameIntermediateConvert(typeNames):
 
 def assignStatement(preValue, assStatement):
     # Input is an assignment statement like  a = b + c
+    # print assStatement
     intermediateAssign = 'STRTEX\n'
     rightSide = assStatement.split("=")[1]
     postfixExpr = infixToPostfixConv(removeWhiteSpace(rightSide)).split()
@@ -225,13 +210,9 @@ def varDeclaration(tokenizedInput, value):
                 nextValue = next(tokenizedInput)
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
-                    if checkInt(nextValue):
-                        assStatement = prevValue + "=" + nextValue
-                        intermediateOutput.append(assignStatement(prevValue, assStatement))
-                        nextValue = next(tokenizedInput)
-                        # Commented section for if not initialized variable
-                        # elif nextValue == commaLit or nextValue == eol:
-                        # intermediateOutput.append("EQL NULL")
+                    assStatement = prevValue + "=" + nextValue
+                    intermediateOutput.append(assignStatement(prevValue, assStatement))
+                    nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
 
@@ -244,10 +225,9 @@ def varDeclaration(tokenizedInput, value):
                 nextValue = next(tokenizedInput)
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
-                    if checkFloat(nextValue):
-                        assStatement = prevValue + "=" + nextValue
-                        intermediateOutput.append(assignStatement(prevValue, assStatement))
-                        nextValue = next(tokenizedInput)
+                    assStatement = prevValue + "=" + nextValue
+                    intermediateOutput.append(assignStatement(prevValue, assStatement))
+                    nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
 
@@ -260,10 +240,9 @@ def varDeclaration(tokenizedInput, value):
                 nextValue = next(tokenizedInput)
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
-                    if checkBool(nextValue):
-                        assStatement = prevValue + "=" + nextValue
-                        intermediateOutput.append(assignStatement(prevValue, assStatement))
-                        nextValue = next(tokenizedInput)
+                    assStatement = prevValue + "=" + nextValue
+                    intermediateOutput.append(assignStatement(prevValue, assStatement))
+                    nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
     # Return Error
@@ -281,27 +260,40 @@ def blockDeclaration(tokenizedInput, value):
 
     # Variable Declaration or assignment
     if value in typeName:
-        while nextValue != "." and nextValue != "}" and nextValue != "{":
-            if commaFlag == 1:
-                intermediateOutput += "\n"
-            intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue
-            prevValue = nextValue
-            nextValue = next(tokenizedInput)
-
-            # Handling Declaration
-            if nextValue == ":=":
-                commaFlag = 0
-                rightSide = ''
+        while nextValue != ".":
+            if nextValue != ",":
+                intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue + "\n"
+                prevValue = nextValue
                 nextValue = next(tokenizedInput)
-                if nextValue == commaLit:
-                    commaFlag = 1
+                if nextValue == assign:
                     nextValue = next(tokenizedInput)
-                    if nextValue == commaLit:
-                        commaFlag = 1
-                        nextValue = next(tokenizedInput)
-                # Assignment Declaration
-                assStatement = prevValue + "=" + rightSide
-                intermediateOutput += "\n" + assignStatement(prevValue, assStatement)
+                    assStatement = prevValue + "=" + nextValue
+                    intermediateOutput += assignStatement(prevValue, assStatement)
+                    nextValue = next(tokenizedInput)
+            else:
+                nextValue = next(tokenizedInput)
+        # while nextValue != "." and nextValue != "}" and nextValue != "{":
+        #     if commaFlag == 1:
+        #         intermediateOutput += "\n"
+        #     intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue
+        #     prevValue = nextValue
+        #     nextValue = next(tokenizedInput)
+        #     print prevValue
+        #     print nextValue
+        #     # Handling Declaration
+        #     if nextValue == ":=":
+        #         commaFlag = 0
+        #         rightSide = ''
+        #         nextValue = next(tokenizedInput)
+        #         if nextValue == commaLit:
+        #             commaFlag = 1
+        #             nextValue = next(tokenizedInput)
+        #             if nextValue == commaLit:
+        #                 commaFlag = 1
+        #                 nextValue = next(tokenizedInput)
+        #         # Assignment Declaration
+        #         assStatement = prevValue + "=" + rightSide
+        #         intermediateOutput += "\n" + assignStatement(prevValue, assStatement)
 
     elif nextValue == ":=":
         # Normal Assignment without declaration
@@ -319,11 +311,11 @@ def blockDeclaration(tokenizedInput, value):
     elif value == "print":
         rightSide = nextValue
         intermediateOutput += printStatement(tokenizedInput, nextValue)
-        next(tokenizedInput)
+        nextValue = next(tokenizedInput)
 
     # Return Error
     if nextValue != ".":
-        # print next(tokenizedInput)
+        print nextValue
         intermediateOutput = "SDK ERROR : Next Value = " + rightSide
     return intermediateOutput
 
@@ -518,31 +510,31 @@ def loopStatement(tokenizedInput, value):
     # .LABEL1
     # TYP INT a
     # BREAK
-    # LLEND1
+    # LEND1
     # LOOP END
     global labelCounter
     intermediateOutput = list()
     buildExpr = ''
     # Loop statement declaration
+    labelCounter += 1
+    intermediateOutput.append(".LABEL" + str(labelCounter))
     intermediateOutput.append("LOOP")
     nextValue = next(tokenizedInput)
 
     # Loop Condition Check
     intermediateOutput.append(whenCondition(tokenizedInput, nextValue))
-    labelCounter += 1
-    intermediateOutput.append("JEQ LABEL" + str(labelCounter))
+    intermediateOutput.append("CMP")
 
     # Loop Body Begin
-    intermediateOutput.append(".LABEL" + str(labelCounter))
     nextValue = next(tokenizedInput)
     while nextValue != '}':
         intermediateOutput.append(blockDeclaration(tokenizedInput,nextValue))
         nextValue = next(tokenizedInput)
-
-    intermediateOutput.append("LLEND" + str(labelCounter))
+    intermediateOutput.append("JMP LABEL" + str(labelCounter))
+    intermediateOutput.append("LEND" + str(labelCounter))
 
     # Loop End
-    intermediateOutput.append("LOOP END")
+    intermediateOutput.append("LOOPLEND" + str(labelCounter))
     return intermediateOutput
 
 # Function to convert Print statments
