@@ -2,9 +2,9 @@ SDKSTRT
 TYP INT n
 FUN fact INT
 PAR INT param
-STRT 
+STRT
 WHEN
-STRTEX 
+STRTEX
 PUSH param
 PUSH 1
 EEQL
@@ -50,3 +50,4 @@ function fact -> integer ( integer param ) {
     return result .
 }
 n := fact(4) .
+
