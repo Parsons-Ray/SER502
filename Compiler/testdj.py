@@ -126,6 +126,9 @@ def parseSDK(input):
 
 # Check DataTypes
 def checkInt(l):
+    if l == '0':
+        # Bug fix for 0
+        return "0"
     return int(l)
 
 
@@ -179,15 +182,17 @@ def typeNameIntermediateConvert(typeNames):
         return "FLT"
 
 
-def assignStatement(assStatement):
+def assignStatement(preValue, assStatement):
     # Input is an assignment statement like  a = b + c
     intermediateAssign = 'STRTEX\n'
-    postfixExpr = infixToPostfixConv(removeWhiteSpace(assStatement)).split()
+    rightSide = assStatement.split("=")[1]
+    postfixExpr = infixToPostfixConv(removeWhiteSpace(rightSide)).split()
     for s in postfixExpr:
         if isOperator(s):
             intermediateAssign += returnIntermediateOperator(s) + "\n"
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
+    intermediateAssign += 'EQL ' + preValue + '\n'
     intermediateAssign += 'ENDEX'
     return intermediateAssign
 
@@ -222,7 +227,7 @@ def varDeclaration(tokenizedInput, value):
                     nextValue = next(tokenizedInput)
                     if checkInt(nextValue):
                         assStatement = prevValue + "=" + nextValue
-                        intermediateOutput.append(assignStatement(assStatement))
+                        intermediateOutput.append(assignStatement(prevValue, assStatement))
                         nextValue = next(tokenizedInput)
                         # Commented section for if not initialized variable
                         # elif nextValue == commaLit or nextValue == eol:
@@ -241,7 +246,7 @@ def varDeclaration(tokenizedInput, value):
                     nextValue = next(tokenizedInput)
                     if checkFloat(nextValue):
                         assStatement = prevValue + "=" + nextValue
-                        intermediateOutput.append(assignStatement(assStatement))
+                        intermediateOutput.append(assignStatement(prevValue, assStatement))
                         nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
@@ -257,7 +262,7 @@ def varDeclaration(tokenizedInput, value):
                     nextValue = next(tokenizedInput)
                     if checkBool(nextValue):
                         assStatement = prevValue + "=" + nextValue
-                        intermediateOutput.append(assignStatement(assStatement))
+                        intermediateOutput.append(assignStatement(prevValue, assStatement))
                         nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
@@ -270,10 +275,10 @@ def varDeclaration(tokenizedInput, value):
 # Handling Variable or Expressions Declaration inside a Block
 def blockDeclaration(tokenizedInput, value):
     intermediateOutput = ''
-    nextValue = value
-    if value in typeName:
-        nextValue = next(tokenizedInput)
+    prevValue = value
+    nextValue = next(tokenizedInput)
     commaFlag = 0
+
     # Variable Declaration or assignment
     if value in typeName:
         while nextValue != "." and nextValue != "}" and nextValue != "{":
@@ -282,6 +287,7 @@ def blockDeclaration(tokenizedInput, value):
             intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue
             prevValue = nextValue
             nextValue = next(tokenizedInput)
+
             # Handling Declaration
             if nextValue == ":=":
                 commaFlag = 0
@@ -295,7 +301,8 @@ def blockDeclaration(tokenizedInput, value):
                         nextValue = next(tokenizedInput)
                 # Assignment Declaration
                 assStatement = prevValue + "=" + rightSide
-                intermediateOutput += "\n" + assignStatement(assStatement)
+                intermediateOutput += "\n" + assignStatement(prevValue, assStatement)
+
     elif nextValue == ":=":
         # Normal Assignment without declaration
         rightSide = ''
@@ -304,12 +311,19 @@ def blockDeclaration(tokenizedInput, value):
             rightSide += nextValue
             nextValue = next(tokenizedInput)
         assStatement = value + '=' + rightSide
-        intermediateOutput += assignStatement(assStatement)
+        intermediateOutput += assignStatement(value, assStatement)
     elif nextValue == "break":
         nextValue = next(tokenizedInput)
+        rightSide = nextValue
         intermediateOutput += 'BREAK'
+    elif value == "print":
+        rightSide = nextValue
+        intermediateOutput += printStatement(tokenizedInput, nextValue)
+        next(tokenizedInput)
+
     # Return Error
     if nextValue != ".":
+        # print next(tokenizedInput)
         intermediateOutput = "SDK ERROR : Next Value = " + rightSide
     return intermediateOutput
 
@@ -524,6 +538,7 @@ def loopStatement(tokenizedInput, value):
     while nextValue != '}':
         intermediateOutput.append(blockDeclaration(tokenizedInput,nextValue))
         nextValue = next(tokenizedInput)
+
     intermediateOutput.append("LLEND" + str(labelCounter))
 
     # Loop End
@@ -541,16 +556,15 @@ def printStatement(tokenizedInput, value):
     # PUSH a
     # ENDEX
     # ENDPRNT
-    global labelCounter
-    intermediateOutput = list()
+    if value == 'print':
+        value = next(tokenizedInput)
+    intermediateOutput = ''
     # Print statement declaration
-    intermediateOutput.append("STRTPRNT")
-    intermediateOutput.append("STRTEX")
-    intermediateOutput.append("PUSH " + next(tokenizedInput))
-    intermediateOutput.append("ENDEX")
+    intermediateOutput += "STRTPRNT\nSTRTEX\n"
+    intermediateOutput += "PUSH " + value
+    intermediateOutput += "\nENDEX"
     # Print end
-    intermediateOutput.append("ENDPRNT")
-    next(tokenizedInput)
+    intermediateOutput += "\nENDPRNT"
     return intermediateOutput
 
 # Process : Tokenized Parsed String to Assembly Conversion
@@ -575,7 +589,7 @@ def convertTokens(tokenizedInput):
                 tokenizedOutput.append(loopStatement(tokenizedInputIter, value))
             # Scenario 5 : Print Statement
             elif value == "print":
-                tokenizedOutput.append(printStatement(tokenizedInputIter,value))
+                tokenizedOutput.append(printStatement(tokenizedInputIter,value).split())
     return tokenizedOutput
 
 
@@ -596,9 +610,10 @@ def main():
     labelCounter = 0
 
     # Parse Input
-    tokenizedInput = parseSDK("print a .")
+    tokenizedInput = parseSDK("integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}")
 
     # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}
+    # ['integer', 'a', ':=', '1', ',', 'b', ':=', '1', ',', 'counter', ':=', '0', '.', 'loop', '(', 'counter', '<', '5', ')', '{', 'integer', 'temp', ':=', 'a', '.', 'a', ':=', 'b', '.', 'b', ':=', 'temp', '+', 'b', '.', 'print', 'a', '.', 'counter', ':=', 'counter', '+', '1', '.', '}']
 
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
     # Input's been tokenized based on Grammar Rules
