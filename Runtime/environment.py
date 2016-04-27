@@ -55,6 +55,8 @@ global isInFunction
 isInFunction = False
 current_scope = "GLBL"
 global recentPopFun
+global whenStack
+whenStack= Stack()
 
 def TYP():
     global current_scope
@@ -250,9 +252,7 @@ def FUNEND():
 def LABL():
     lname = tokens.current().replace(".", "")
     global current_scope
-    print "LABEL SCOPE BEFORE ---> " + current_scope
     current_scope = lname
-    print "LABEL SCOPE HERE ----->" + current_scope
     tokens.next()
 
 def CMP():
@@ -286,15 +286,19 @@ def JEQ():
         # if current_scope is not "GLBL":
         #    current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
 
+def WHEN():
+    global whenStack
+    global current_scope
+    whenStack.push(current_scope)
+    tokens.next()
 
 def WLEND():
     while tokens.current() != "ENDW":
         tokens.next()
     if tokens.current() == "ENDW":
         global current_scope
-        #TODO: check this next line. Is it needed? because it breaks when you hit ENDW but never entered the when.
-        #current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
-
+        global whenStack
+        current_scope = whenStack.pop()
     # global current_scope
     # current_scope = dict_of_symbolTabs.get(current_scope).getPrevScope()
 
@@ -346,6 +350,8 @@ def main():
             LOOPLEND()
         elif nextToken == "ENDPRNT":
             PRNT()
+        elif nextToken == "WHEN":
+            WHEN()
         else:
             tokens.next()
     print dict_of_symbolTabs
