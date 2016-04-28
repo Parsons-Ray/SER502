@@ -109,7 +109,6 @@ def CALL():
 
     dict_of_symbolTabs[name + str(counter)] = symbTable
     current_scope = name + str(counter) #set current_scope to the name of the function + number
-    print "SCOPE HERE ----> "+current_scope
     stack.push(currentFunction)
 
     tokens.setCounter(currentFunction.getStartPC())
@@ -121,7 +120,6 @@ def RTRN():
     global current_scope
     global isInExpression
     global recentPopFun
-    print "Is in expression: " + str(isInExpression)
     tokens.next() #pop RTRN
     exitedFun = stack.pop() #pop the function from the stack
     recentPopFun = copy.deepcopy(exitedFun)
@@ -132,14 +130,13 @@ def RTRN():
 def LABL_TRACK():
     while runTokens.current() != "SDKEND":
         label = runTokens.current()
+        global current_scope
         if re.match(labelPat, label):
-            global current_scope
             # print "Current Scope: " + current_scope
             current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
             current_scope = label.replace(".", "")
         if re.match(lendPat, label):
-            global current_scope
             # print "Exit Scope: " + current_scope
             current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
         runTokens.next()
@@ -309,7 +306,7 @@ def LOOPLEND():
 
 def PRNT():
     expression = stack.pop()
-    print "HELLO   --> "+str(expression)+" <-- HELLO"
+    print str(expression)
     tokens.next()
 
 def main():
@@ -318,7 +315,6 @@ def main():
         LABL_TRACK()
     while tokens.current() != "SDKEND":
         nextToken = tokens.current()
-        print nextToken
         #print(nextToken)
         if nextToken == "TYP":
             TYP()

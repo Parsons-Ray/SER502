@@ -55,7 +55,6 @@ class Stack:
          #print("Stack: {0}".format(self.items))
 
      def pop(self):
-         print("StackPop: {0}".format(self.items))
          return self.items.pop()
 
      def peek(self):
