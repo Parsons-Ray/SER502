@@ -1,5 +1,6 @@
 __author__ = 'Digant'
 import pyparsing as pp
+import os
 import re
 from pprint import pprint
 from InfixToPostfix import infixToPostfixConv, isOperator
@@ -636,7 +637,9 @@ def main():
     labelCounter = 0
 
     # Parse Input
-    tokenizedInput = parseSDK("integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).")
+    file = open('input.txt', 'r')
+    tokenizedInput = parseSDK(file.read())
+    # tokenizedInput = parseSDK("integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).")
 
     # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}
     # ['integer', 'a', ':=', '1', ',', 'b', ':=', '1', ',', 'counter', ':=', '0', '.', 'loop', '(', 'counter', '<', '5', ')', '{', 'integer', 'temp', ':=', 'a', '.', 'a', ':=', 'b', '.', 'b', ':=', 'temp', '+', 'b', '.', 'print', 'a', '.', 'counter', ':=', 'counter', '+', '1', '.', '}']
@@ -659,3 +662,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    os.system('python ../Runtime/environment.py')
