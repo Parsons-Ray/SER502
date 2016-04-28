@@ -292,10 +292,7 @@ def WHEN():
 def WLEND():
     while tokens.current() != "ENDW":
         tokens.next()
-    if tokens.current() == "ENDW":
-        global current_scope
-        global whenStack
-        current_scope = whenStack.pop()
+    dict_of_symbolTabs[current_scope].emptyTable()
     # global current_scope
     # current_scope = dict_of_symbolTabs.get(current_scope).getPrevScope()
 

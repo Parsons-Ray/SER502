@@ -536,6 +536,7 @@ def loopStatement(tokenizedInput, value):
     # LEND1
     # LOOP END
     global labelCounter
+    global nextElement
     intermediateOutput = list()
     buildExpr = ''
     # Loop statement declaration
@@ -552,7 +553,12 @@ def loopStatement(tokenizedInput, value):
     nextValue = next(tokenizedInput)
     while nextValue != '}':
         intermediateOutput.append(blockDeclaration(tokenizedInput,nextValue))
-        nextValue = next(tokenizedInput)
+
+        if nextElement != '':
+            nextValue = nextElement
+            nextElement = ''
+        else :
+            nextValue = next(tokenizedInput)
     intermediateOutput.append("JMP LABEL" + str(labelCounter))
     intermediateOutput.append("LEND" + str(labelCounter))
 
