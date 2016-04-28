@@ -38,6 +38,10 @@ def parseSDK(input):
     global when
     global elsevar
     global typeName
+    global prevElement
+    global nextElement
+    prevElement = ''
+    nextElement = ''
 
     eol = pp.Literal(".")
     commaLit = pp.Literal(",")
@@ -168,13 +172,23 @@ def typeNameIntermediateConvert(typeNames):
 
 def assignStatement(preValue, assStatement):
     # Input is an assignment statement like  a = b + c
-    # print assStatement
+
     intermediateAssign = 'STRTEX\n'
     rightSide = assStatement.split("=")[1]
+    m = re.search(r"[a-zA-Z]*\([a-zA-Z0-9*+-/]*\)", rightSide)
+    if m is not None:
+        funcName = m.group()
+    rightSide = re.sub(r"[a-zA-Z]*\([a-zA-Z0-9*+-/]*\)", '@', rightSide)
     postfixExpr = infixToPostfixConv(removeWhiteSpace(rightSide)).split()
     for s in postfixExpr:
         if isOperator(s):
-            intermediateAssign += returnIntermediateOperator(s) + "\n"
+            if s == "@" and funcName is not None:
+                intermediateAssign += "CALL " + funcName.split("(")[0] + "\n"
+                for arg in funcName.split("(")[1].split(","):
+                    arg = re.sub(r"\)", '', arg)
+                    intermediateAssign += 'PAR ' + arg + '\n'
+            else:
+                intermediateAssign += returnIntermediateOperator(s) + "\n"
         else:
             intermediateAssign += 'PUSH ' + s + "\n"
     intermediateAssign += 'EQL ' + preValue + '\n'
@@ -253,13 +267,14 @@ def varDeclaration(tokenizedInput, value):
 
 # Handling Variable or Expressions Declaration inside a Block
 def blockDeclaration(tokenizedInput, value):
+    global prevElement
     intermediateOutput = ''
     prevValue = value
-    nextValue = next(tokenizedInput)
     commaFlag = 0
-
+    rightSide = ''
     # Variable Declaration or assignment
     if value in typeName:
+        nextValue = next(tokenizedInput)
         while nextValue != ".":
             if nextValue != ",":
                 intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue + "\n"
@@ -267,58 +282,53 @@ def blockDeclaration(tokenizedInput, value):
                 nextValue = next(tokenizedInput)
                 if nextValue == assign:
                     nextValue = next(tokenizedInput)
-                    assStatement = prevValue + "=" + nextValue
+                    while nextValue != '.':
+                        rightSide += nextValue
+                        nextValue = next(tokenizedInput)
+                    assStatement = prevValue + "=" + rightSide
                     intermediateOutput += assignStatement(prevValue, assStatement)
-                    nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
-        # while nextValue != "." and nextValue != "}" and nextValue != "{":
-        #     if commaFlag == 1:
-        #         intermediateOutput += "\n"
-        #     intermediateOutput += "TYP " + typeNameIntermediateConvert(value) + " " + nextValue
-        #     prevValue = nextValue
-        #     nextValue = next(tokenizedInput)
-        #     print prevValue
-        #     print nextValue
-        #     # Handling Declaration
-        #     if nextValue == ":=":
-        #         commaFlag = 0
-        #         rightSide = ''
-        #         nextValue = next(tokenizedInput)
-        #         if nextValue == commaLit:
-        #             commaFlag = 1
-        #             nextValue = next(tokenizedInput)
-        #             if nextValue == commaLit:
-        #                 commaFlag = 1
-        #                 nextValue = next(tokenizedInput)
-        #         # Assignment Declaration
-        #         assStatement = prevValue + "=" + rightSide
-        #         intermediateOutput += "\n" + assignStatement(prevValue, assStatement)
-
-    elif nextValue == ":=":
-        # Normal Assignment without declaration
-        rightSide = ''
-        nextValue = next(tokenizedInput)
-        while nextValue != eol:
-            rightSide += nextValue
-            nextValue = next(tokenizedInput)
-        assStatement = value + '=' + rightSide
-        intermediateOutput += assignStatement(value, assStatement)
-    elif nextValue == "break":
-        nextValue = next(tokenizedInput)
-        rightSide = nextValue
-        intermediateOutput += 'BREAK'
     elif value == "print":
+        nextValue = next(tokenizedInput)
         rightSide = nextValue
         intermediateOutput += printStatement(tokenizedInput, nextValue)
         nextValue = next(tokenizedInput)
-
+    elif value == "when":
+        intermediateOutput += whenStatement(tokenizedInput,value)
+    elif value == "return":
+        nextValue = next(tokenizedInput)
+        intermediateOutput += returnStatement(tokenizedInput, nextValue)
+        nextValue = next(tokenizedInput)
+    else:
+        nextValue = next(tokenizedInput)
+        if nextValue == ":=":
+            # Normal Assignment without declaration
+            rightSide = ''
+            nextValue = next(tokenizedInput)
+            while nextValue != eol:
+                rightSide += nextValue
+                nextValue = next(tokenizedInput)
+            assStatement = value + '=' + rightSide
+            intermediateOutput += assignStatement(value, assStatement)
+        elif nextValue == "break":
+            nextValue = next(tokenizedInput)
+            rightSide = nextValue
+            intermediateOutput += 'BREAK'
     # Return Error
-    if nextValue != ".":
-        print nextValue
-        intermediateOutput = "SDK ERROR : Next Value = " + rightSide
+    if prevElement != '}' and nextElement == '':
+        if nextValue != "." and nextValue != '}':
+        # print intermediateOutput
+        #print next(tokenizedInput)
+            intermediateOutput = "SDK ERROR : Next Value = " + rightSide
+
     return intermediateOutput
 
+def returnStatement(tokenizedInput, value):
+    # Function for return Intermediate
+    intermediateStr = ''
+    intermediateStr = 'RTRN ' + value
+    return intermediateStr
 
 # Function Declaration Translator
 def functionDeclaration(tokenizedInput, value):
@@ -355,6 +365,8 @@ def functionDeclaration(tokenizedInput, value):
     # RTRN z
     # END
     intermediateOutput = list()
+    global nextElement
+    global prevElement
     # Function declaration statement
     functionName = next(tokenizedInput)
     next(tokenizedInput)
@@ -373,11 +385,16 @@ def functionDeclaration(tokenizedInput, value):
     intermediateOutput.append("STRT")
     nextValue = next(tokenizedInput)
     while nextValue != 'return':
-        if nextValue in typeName:
-            intermediateOutput.append(blockDeclaration(tokenizedInput, nextValue))
-        nextValue = next(tokenizedInput)
+        intermediateOutput.append(blockDeclaration(tokenizedInput, nextValue))
+        if prevElement == '}':
+            nextValue = nextElement
+            prevElement = ''
+            nextElement = ''
+        else :
+            nextValue = next(tokenizedInput)
+
     intermediateOutput.append("RTRN " + next(tokenizedInput))
-    intermediateOutput.append("END")
+    intermediateOutput.append("FUNEND")
 
     # Return Error
     nextValue = next(tokenizedInput)
@@ -396,6 +413,7 @@ def whenCondition(tokenizedInput, value):
         nextValue = next(tokenizedInput)
     # print condition
     condition = re.sub(r'==', '@', condition)
+
     postfixExpr = infixToPostfixConv(removeWhiteSpace(condition))
     postfixExpr = re.sub(r'@', '==', postfixExpr)
     intermediateAssign += "STRTEX" + "\n"
@@ -410,12 +428,13 @@ def whenCondition(tokenizedInput, value):
 # Function to translate When statement's body
 def whenBody(tokenizedInput, value):
     intermediateAssign = ''
+    global prevElement
     nextValue = value
     while nextValue != '}':
         # Handles Assignment Operations
-        if nextValue in typeName and nextValue != '.':
-            intermediateAssign += blockDeclaration(tokenizedInput, nextValue)
+        intermediateAssign += blockDeclaration(tokenizedInput, nextValue)
         nextValue = next(tokenizedInput)
+    prevElement = '}'
     return intermediateAssign
 
 # When Statement Intermediate Generator
@@ -453,39 +472,42 @@ def whenStatement(tokenizedInput, value):
     # TYP INT g
     # ENDW
     global labelCounter
-    intermediateOutput = list()
-
+    global prevElement
+    global nextElement
+    intermediateOutput = ''
+    prevElement = ''
     # When statement declaration
-    intermediateOutput.append("WHEN")
+    intermediateOutput += "WHEN" + "\n"
     nextValue = next(tokenizedInput)
     # When Condition Check
-    intermediateOutput.append(whenCondition(tokenizedInput, nextValue))
+    intermediateOutput += whenCondition(tokenizedInput, nextValue) + "\n"
     labelCounter += 1
-    intermediateOutput.append("JEQ LABEL" + str(labelCounter))
-
+    intermediateOutput += "JEQ LABEL" + str(labelCounter) + "\n"
+    nextValue = next(tokenizedInput)
     # When Body - Label Declaration
-    intermediateOutput.append(".LABEL" + str(labelCounter))
-    intermediateOutput.append(whenBody(tokenizedInput, nextValue))
-    intermediateOutput.append("WLEND" + str(labelCounter))
+    intermediateOutput += ".LABEL" + str(labelCounter) + "\n"
+    intermediateOutput += whenBody(tokenizedInput, nextValue) + "\n"
+    intermediateOutput += "LEND" + str(labelCounter) + "\n"
 
     # elseWhen Declaration
-    nextValue = next(tokenizedInput)
-    while nextValue == 'elseWhen':
-        intermediateOutput.append(whenCondition(tokenizedInput, nextValue))
-        labelCounter += 1
-        intermediateOutput.append("JEQ LABEL" + str(labelCounter))
-        intermediateOutput.append(".LABEL" + str(labelCounter))
-        nextValue = next(tokenizedInput)
-        intermediateOutput.append(whenBody(tokenizedInput, nextValue))
-        intermediateOutput.append("WLEND" + str(labelCounter))
+    nextElement = next(tokenizedInput)
+    if nextElement == 'elseWhen' or nextElement == 'else':
+        while nextElement == 'elseWhen':
+            intermediateOutput += whenCondition(tokenizedInput, nextValue) + "\n"
+            labelCounter += 1
+            intermediateOutput += "JEQ LABEL" + str(labelCounter) + "\n"
+            intermediateOutput += ".LABEL" + str(labelCounter) + "\n"
+            nextElement = next(tokenizedInput)
+            intermediateOutput += whenBody(tokenizedInput, nextValue) + "\n"
+            intermediateOutput += "LEND" + str(labelCounter) + "\n"
 
-    # else Declaration
-    # Run statements till ENDW
-    nextValue = next(tokenizedInput)
-    intermediateOutput.append(whenBody(tokenizedInput, nextValue))
-    intermediateOutput.append("ENDW")
+        # else Declaration
+        # Run statements till ENDW
+        if nextElement == 'else':
+            intermediateOutput += whenBody(tokenizedInput, nextValue) + "\n"
+            nextElement = next(tokenizedInput)
 
-    # print intermediateOutput
+    intermediateOutput += "ENDW"
     # if nextValue != "}":
     #   intermediateOutput.append("SDK ERROR : Next Value = " + nextValue)
     return intermediateOutput
@@ -566,7 +588,7 @@ def convertTokens(tokenizedInput):
     tokenizedInputIter = iter(tokenizedInput)
     tokenizedOutput = list()
     for value in tokenizedInputIter:
-        if value != '.':
+        if value != '.' and value != "}":
             # Scenario 1 : Variable Declaration
             if value in typeName:
                 tokenizedOutput.append(varDeclaration(tokenizedInputIter, value))
@@ -575,13 +597,23 @@ def convertTokens(tokenizedInput):
                 tokenizedOutput.append(functionDeclaration(tokenizedInputIter, value))
             # Scenario 3 : When Statement
             elif value == "when":
-                tokenizedOutput.append(whenStatement(tokenizedInputIter, value))
+                tokenizedOutput.append(whenStatement(tokenizedInputIter, value).split("\n"))
             # Scenario 4 : Loop Statement
             elif value == "loop":
                 tokenizedOutput.append(loopStatement(tokenizedInputIter, value))
             # Scenario 5 : Print Statement
             elif value == "print":
-                tokenizedOutput.append(printStatement(tokenizedInputIter,value).split())
+                tokenizedOutput.append(printStatement(tokenizedInputIter,value).split("\n"))
+            else:
+                nextVal = value
+                rightSide = ''
+                if next(tokenizedInputIter) == ':=':
+                    nextVal = next(tokenizedInputIter)
+                    while nextVal != eol:
+                        rightSide += nextVal
+                        nextVal = next(tokenizedInputIter)
+                assStatement = value + " = " + rightSide
+                tokenizedOutput.append(assignStatement(value, assStatement).split("\n"))
     return tokenizedOutput
 
 
@@ -599,13 +631,19 @@ def main():
     global typeName
     global lcrBracs
     global labelCounter
+    global nextElement
+    global prevElement
     labelCounter = 0
 
     # Parse Input
-    tokenizedInput = parseSDK("integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}")
+    tokenizedInput = parseSDK("integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).")
 
     # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}
     # ['integer', 'a', ':=', '1', ',', 'b', ':=', '1', ',', 'counter', ':=', '0', '.', 'loop', '(', 'counter', '<', '5', ')', '{', 'integer', 'temp', ':=', 'a', '.', 'a', ':=', 'b', '.', 'b', ':=', 'temp', '+', 'b', '.', 'print', 'a', '.', 'counter', ':=', 'counter', '+', '1', '.', '}']
+
+    # Kevin's Factorial Program : int n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).
+    # ['integer', 'n', '.', 'function', 'fact', '->', 'integer', '(', 'integer', 'param', ')', '{', 'when', '(', 'param', '==', '1', ')', '{', 'return', 'param', '.', '}', 'integer', 'parMinOne', ':=', 'param', '-', '1', '.', 'integer', 'result', ':=', 'param', '*', 'fact', '(', 'parMinOne', ')', '.', 'return', 'result', '.', '}', 'n', ':=', 'fact', '(', '4', ')', '.']
+
 
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
     # Input's been tokenized based on Grammar Rules
