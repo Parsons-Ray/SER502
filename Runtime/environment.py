@@ -55,6 +55,8 @@ global isInFunction
 isInFunction = False
 current_scope = "GLBL"
 global recentPopFun
+global whenStack
+whenStack= Stack()
 
 def TYP():
     global current_scope
@@ -107,7 +109,6 @@ def CALL():
 
     dict_of_symbolTabs[name + str(counter)] = symbTable
     current_scope = name + str(counter) #set current_scope to the name of the function + number
-    print "SCOPE HERE ----> "+current_scope
     stack.push(currentFunction)
 
     tokens.setCounter(currentFunction.getStartPC())
@@ -119,7 +120,6 @@ def RTRN():
     global current_scope
     global isInExpression
     global recentPopFun
-    print "Is in expression: " + str(isInExpression)
     tokens.next() #pop RTRN
     exitedFun = stack.pop() #pop the function from the stack
     recentPopFun = copy.deepcopy(exitedFun)
@@ -130,14 +130,13 @@ def RTRN():
 def LABL_TRACK():
     while runTokens.current() != "SDKEND":
         label = runTokens.current()
+        global current_scope
         if re.match(labelPat, label):
-            global current_scope
             # print "Current Scope: " + current_scope
             current_label = Label(runTokens.current().replace(".", ""), runTokens.getCounter()+1, current_scope)
             # ltermnum = label[:-1]
             current_scope = label.replace(".", "")
         if re.match(lendPat, label):
-            global current_scope
             # print "Exit Scope: " + current_scope
             current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
         runTokens.next()
@@ -250,9 +249,7 @@ def FUNEND():
 def LABL():
     lname = tokens.current().replace(".", "")
     global current_scope
-    print "LABEL SCOPE BEFORE ---> " + current_scope
     current_scope = lname
-    print "LABEL SCOPE HERE ----->" + current_scope
     tokens.next()
 
 def CMP():
@@ -286,15 +283,19 @@ def JEQ():
         # if current_scope is not "GLBL":
         #    current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
 
+def WHEN():
+    global whenStack
+    global current_scope
+    whenStack.push(current_scope)
+    tokens.next()
 
 def WLEND():
     while tokens.current() != "ENDW":
         tokens.next()
     if tokens.current() == "ENDW":
         global current_scope
-        #TODO: check this next line. Is it needed? because it breaks when you hit ENDW but never entered the when.
-        #current_scope = dict_of_symbolTabs[current_scope].getPrevScope()
-
+        global whenStack
+        current_scope = whenStack.pop()
     # global current_scope
     # current_scope = dict_of_symbolTabs.get(current_scope).getPrevScope()
 
@@ -305,7 +306,7 @@ def LOOPLEND():
 
 def PRNT():
     expression = stack.pop()
-    print "HELLO   --> "+str(expression)+" <-- HELLO"
+    print str(expression)
     tokens.next()
 
 def main():
@@ -314,7 +315,6 @@ def main():
         LABL_TRACK()
     while tokens.current() != "SDKEND":
         nextToken = tokens.current()
-        print nextToken
         #print(nextToken)
         if nextToken == "TYP":
             TYP()
@@ -346,9 +346,11 @@ def main():
             LOOPLEND()
         elif nextToken == "ENDPRNT":
             PRNT()
+        elif nextToken == "WHEN":
+            WHEN()
         else:
             tokens.next()
-    print dict_of_symbolTabs
+    # print dict_of_symbolTabs
     #LABL(curr_labeltokens.current())
 #Call the main method. Starts runtime.
 main()

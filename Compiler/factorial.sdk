@@ -37,3 +37,17 @@ PAR 4
 EQL n
 ENDEX
 SDKEND
+
+
+
+int n .
+function fact -> integer ( integer param ) {
+    when (param == 1) {
+        return param .
+    }
+    integer parMinOne := param - 1 .
+    integer result := param * fact (parMinOne) .
+    return result .
+}
+n := fact(4) .
+
