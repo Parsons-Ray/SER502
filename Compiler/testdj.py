@@ -651,12 +651,19 @@ def main():
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
-    print tokenizedInput
+    # print tokenizedInput
     # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
     # Sample Exception handling
     # raise Exception('Incorrect data')
     # print tokenizedInput
     # Writing TokenizedOutput to file
+    print 'Reading file : Compiler/input.txt'
+    print 'Input : '
+    file = open('input.txt', 'r')
+    print file.read()
+    print 'Converting to Intermediate...'
+    print 'Reading intermediate.sdk...'
+    print 'Output : '
     writeFile(convertTokens(tokenizedInput))
 
 

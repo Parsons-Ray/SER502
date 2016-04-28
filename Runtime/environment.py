@@ -350,7 +350,7 @@ def main():
             WHEN()
         else:
             tokens.next()
-    print dict_of_symbolTabs
+    # print dict_of_symbolTabs
     #LABL(curr_labeltokens.current())
 #Call the main method. Starts runtime.
 main()
