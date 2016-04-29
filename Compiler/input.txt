@@ -1,10 +1,9 @@
 integer a := 1, b := 1, counter := 0.
 loop (counter < 5){
-when( a == 1  AND b == 1  ) {
+when( (a == 1) && (b == 1) ) {
     print a .
 }
-integer temp .
- temp := a .
+integer temp := a .
 a := b .
 b := temp + b .
 print a .

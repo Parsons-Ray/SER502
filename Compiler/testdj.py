@@ -2,6 +2,7 @@ __author__ = 'Digant'
 import pyparsing as pp
 import os
 import re
+from Stack import Stack
 from pprint import pprint
 from InfixToPostfix import infixToPostfixConv, isOperator
 
@@ -141,9 +142,9 @@ def returnIntermediateOperator(sdkOperator):
         return 'DIV'
     elif sdkOperator == "=":
         return 'EQL'
-    elif sdkOperator == "&&":
+    elif sdkOperator == "%":
         return 'AND'
-    elif sdkOperator == "||":
+    elif sdkOperator == "^":
         return 'OR'
     elif sdkOperator == "<":
         return 'LT'
@@ -414,9 +415,11 @@ def whenCondition(tokenizedInput, value):
         nextValue = next(tokenizedInput)
     # print condition
     condition = re.sub(r'==', '@', condition)
-
+    condition = re.sub(r'&&', '%', condition)
+    #condition = re.sub(r'||', '^', condition)
     postfixExpr = infixToPostfixConv(removeWhiteSpace(condition))
     postfixExpr = re.sub(r'@', '==', postfixExpr)
+    #postfixExpr = re.sub(r'$', '||', postfixExpr)
     intermediateAssign += "STRTEX" + "\n"
     for s in postfixExpr.split():
         if isOperator(s):
@@ -473,6 +476,7 @@ def whenStatement(tokenizedInput, value):
     # TYP INT g
     # ENDW
     global labelCounter
+    global labelsStack
     global prevElement
     global nextElement
     intermediateOutput = ''
@@ -482,13 +486,16 @@ def whenStatement(tokenizedInput, value):
     nextValue = next(tokenizedInput)
     # When Condition Check
     intermediateOutput += whenCondition(tokenizedInput, nextValue) + "\n"
+
     labelCounter += 1
+    labelsStack.push(labelCounter)
     intermediateOutput += "JEQ LABEL" + str(labelCounter) + "\n"
     nextValue = next(tokenizedInput)
     # When Body - Label Declaration
     intermediateOutput += ".LABEL" + str(labelCounter) + "\n"
     intermediateOutput += whenBody(tokenizedInput, nextValue) + "\n"
-    intermediateOutput += "LEND" + str(labelCounter) + "\n"
+    prevLabelCounter = labelsStack.pop()
+    intermediateOutput += "LEND" + str(prevLabelCounter) + "\n"
 
     # elseWhen Declaration
     nextElement = next(tokenizedInput)
@@ -496,16 +503,23 @@ def whenStatement(tokenizedInput, value):
         while nextElement == 'elseWhen':
             intermediateOutput += whenCondition(tokenizedInput, nextValue) + "\n"
             labelCounter += 1
+            labelsStack.push(labelCounter)
             intermediateOutput += "JEQ LABEL" + str(labelCounter) + "\n"
             intermediateOutput += ".LABEL" + str(labelCounter) + "\n"
             nextElement = next(tokenizedInput)
             intermediateOutput += whenBody(tokenizedInput, nextValue) + "\n"
-            intermediateOutput += "LEND" + str(labelCounter) + "\n"
+            prevLabelCounter = labelsStack.pop()
+            intermediateOutput += "LEND" + str(prevLabelCounter) + "\n"
 
         # else Declaration
         # Run statements till ENDW
         if nextElement == 'else':
+            labelCounter += 1
+            labelsStack.push(labelCounter)
+            intermediateOutput += ".LABEL" + str(labelCounter) + "\n"
             intermediateOutput += whenBody(tokenizedInput, nextValue) + "\n"
+            prevLabelCounter = labelsStack.pop()
+            intermediateOutput += "LEND" + str(prevLabelCounter) + "\n"
             nextElement = next(tokenizedInput)
 
     intermediateOutput += "ENDW"
@@ -536,11 +550,13 @@ def loopStatement(tokenizedInput, value):
     # LEND1
     # LOOP END
     global labelCounter
+    global labelsStack
     global nextElement
     intermediateOutput = list()
     buildExpr = ''
     # Loop statement declaration
     labelCounter += 1
+    labelsStack.push(labelCounter)
     intermediateOutput.append(".LABEL" + str(labelCounter))
     intermediateOutput.append("LOOP")
     nextValue = next(tokenizedInput)
@@ -559,11 +575,12 @@ def loopStatement(tokenizedInput, value):
             nextElement = ''
         else :
             nextValue = next(tokenizedInput)
-    intermediateOutput.append("JMP LABEL" + str(labelCounter))
-    intermediateOutput.append("LEND" + str(labelCounter))
+    prevLabelCounter = labelsStack.pop()
+    intermediateOutput.append("JMP LABEL" + str(prevLabelCounter))
+    intermediateOutput.append("LEND" + str(prevLabelCounter))
 
     # Loop End
-    intermediateOutput.append("LOOPLEND" + str(labelCounter))
+    intermediateOutput.append("LOOPLEND" + str(prevLabelCounter))
     return intermediateOutput
 
 # Function to convert Print statments
@@ -640,11 +657,16 @@ def main():
     global labelCounter
     global nextElement
     global prevElement
-    labelCounter = 0
+    global labelsStack
 
     # Parse Input
     file = open('input.txt', 'r')
     tokenizedInput = parseSDK(file.read())
+
+    # Initializing Label Handling Variables
+    labelCounter = 0
+    labelsStack = Stack()
+
     # tokenizedInput = parseSDK("integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).")
 
     # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}

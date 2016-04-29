@@ -22,25 +22,6 @@ PUSH 5
 LT
 ENDEX
 CMP
-WHEN
-STRTEX
-PUSH a
-PUSH 1
-EEQL
-PUSH b
-PUSH 1
-EEQL
-AND
-ENDEX
-JEQ LABEL2
-.LABEL2
-STRTPRNT
-STRTEX
-PUSH a
-ENDEX
-ENDPRNT
-LEND2
-ENDW
 TYP INT temp
 STRTEX
 PUSH a
@@ -51,8 +32,8 @@ PUSH b
 EQL a
 ENDEX
 STRTEX
-PUSH temp
 PUSH b
+PUSH temp
 ADD
 EQL b
 ENDEX
@@ -71,3 +52,17 @@ JMP LABEL1
 LEND1
 LOOPLEND1
 SDKEND
+
+integer a := 1, b := 1, counter := 0.
+loop (counter < 5){
+    integer temp := a .
+    a := b .
+    b := temp + b .
+    print a .
+    counter := counter + 1 .
+}
+
+
+Add Label - Loop
+When Statement within Function
+Function Call
