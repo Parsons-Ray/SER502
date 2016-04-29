@@ -12,7 +12,7 @@ def isOperand(sdkOperand):
 def isOperator(sdkOperator):
     # Function to check if the sdkOperator is an Operator
     if sdkOperator == "+" or sdkOperator == "-" or sdkOperator == "*" or sdkOperator == "/" or sdkOperator == "^" or \
-                    sdkOperator == "=" or sdkOperator == "&&" or sdkOperator == "||" or sdkOperator == ">" \
+                    sdkOperator == "=" or sdkOperator == "%" or sdkOperator == "^" or sdkOperator == ">" \
             or sdkOperator == ">=" or sdkOperator == "<" or sdkOperator == "<=" or sdkOperator == "=="\
             or sdkOperator == "@":
         return 1
@@ -66,11 +66,11 @@ def topStack(stack):
 
 def precedence(operator):
     # Function to decide Precedence of the Operator
-    if operator == "@":
+    if operator == "%":
         return (12)
-    if operator == "&&":
+    if operator == "$":
         return (11)
-    if operator == "||":
+    if operator == "@":
         return (10)
     if (operator == "<=") or (operator == ">="):
         return (9)

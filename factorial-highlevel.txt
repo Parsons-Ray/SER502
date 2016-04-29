@@ -1,11 +1,4 @@
-integer n.
-function fact(integer param)->integer{
-    when(param == 1){
-        return param.
-    }
-    integer parMinOne := param - 1.
-    integer result := param * parMinOne.
-    return result.
-}
-
-n = fact(4).
+integer a := 10, b := 20, c .
+floating d := 20.0 .
+boolean e := true .
+Stack sampleStack .
