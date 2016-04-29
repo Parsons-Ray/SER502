@@ -2,6 +2,7 @@ __author__ = 'Digant'
 import pyparsing as pp
 import os
 import re
+import sys
 from pprint import pprint
 from InfixToPostfix import infixToPostfixConv, isOperator
 
@@ -637,7 +638,7 @@ def main():
     labelCounter = 0
 
     # Parse Input
-    file = open('input.txt', 'r')
+    file = open(sys.argv[1], 'r')
     tokenizedInput = parseSDK(file.read())
     # tokenizedInput = parseSDK("integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).")
 
@@ -657,9 +658,9 @@ def main():
     # raise Exception('Incorrect data')
     # print tokenizedInput
     # Writing TokenizedOutput to file
-    print 'Reading file : Compiler/input.txt'
+    print 'Reading file : ' + str(sys.argv[1])
     print 'Input : '
-    file = open('input.txt', 'r')
+    file = open(sys.argv[1], 'r')
     print file.read()
     print 'Converting to Intermediate...'
     print 'Reading intermediate.sdk...'

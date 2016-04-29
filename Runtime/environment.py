@@ -41,8 +41,9 @@ lendPat = r'LEND[0-9]*'
 
 filename = file_processor("../Compiler/Intermediate.sdk")
 tokens = Iterator(filename.getToks())
-runTokens = Iterator(filename.getToks())
 
+runTokens = Iterator(filename.getToks())
+tokens = Iterator(["SDKSTRT", "TYP", "INT", "a", "TYP", "stack", "sampleStack","SDKPU", "sampleStack", "5", "STRTEX", "SDKPO", "sampleStack", "EQL", "a", "ENDEX", "SDKEND"])
 
 #- - - - - - - - - - - - - - - - - - - - -All - - - - - - - - - - - - - - - - - - -
 global glbl_sym_table
@@ -62,9 +63,13 @@ def TYP():
     global current_scope
     tokens.next() #this should pop off "TYP"
     varType = tokens.next() #pushes "INT, FLT, BOOL" onto stack
-    varID = tokens.next() #variable identifier ("a", "b", "c")
-    var = Variable(varID, None, varType)
-    dict_of_symbolTabs[current_scope].add(varID, var)
+    identifier = tokens.next() #variable identifier ("a", "b", "c")
+    if varType == "stack":
+        newStack = Stack()
+        dict_of_symbolTabs[current_scope].add(identifier, newStack)
+    else:
+        var = Variable(identifier, None, varType)
+        dict_of_symbolTabs[current_scope].add(identifier, var)
 
 
 def FUN():
@@ -213,10 +218,12 @@ def STARTEX():
                 stack.push(0)
             else:
                 stack.push(1)
+        elif nextToken == "SDKPO":
+            stackObj = dict_of_symbolTabs[current_scope].lookup(tokens.next())
+            stack.push(int(stackObj.pop()))
         elif nextToken == "EQL":
+            nextToken = tokens.next()
             try:
-                nextToken = tokens.next()
-
                 varObj = dict_of_symbolTabs[current_scope].lookup(nextToken)
                 varObj.setValue(stack.pop())
             except ValueError:
@@ -309,10 +316,26 @@ def PRNT():
     print str(expression)
     tokens.next()
 
+def SDKPU():
+    print "getting here"
+    tokens.next()#pop SDKPU
+    name = tokens.next() #name of stack
+    print tokens.current()
+    currentStack = dict_of_symbolTabs[current_scope].lookup(name) #return type
+    currentStack.push(tokens.next())
+
+
+def SDKPO():
+    tokens.next()#pop SDKPU
+    name = tokens.next() #name of stack
+    currentStack = dict_of_symbolTabs[current_scope].lookup(name) #return type
+    currentStack.pop()
+
 def main():
     global isInExpression
     if not isInExpression:
-        LABL_TRACK()
+        #LABL_TRACK()
+        print("TODO: ADD BACK LABEL TRACK")
     while tokens.current() != "SDKEND":
         nextToken = tokens.current()
         #print(nextToken)
@@ -330,8 +353,8 @@ def main():
             STARTEX()
         elif nextToken == "FUNEND":
             FUNEND()
-        elif re.match(labelPat, nextToken):
-            LABL()
+        # elif re.match(labelPat, nextToken):
+        #     LABL()
         elif nextToken == "CMP":
             CMP()
         elif nextToken == "JMP":
@@ -348,9 +371,13 @@ def main():
             PRNT()
         elif nextToken == "WHEN":
             WHEN()
+        elif nextToken == "SDKPU":
+            SDKPU()
+        elif nextToken == "SDKPO":
+            SDKPO()
         else:
             tokens.next()
-    # print dict_of_symbolTabs
+    print dict_of_symbolTabs
     #LABL(curr_labeltokens.current())
 #Call the main method. Starts runtime.
 main()

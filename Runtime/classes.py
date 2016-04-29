@@ -62,6 +62,8 @@ class Stack:
 
      def size(self):
          return len(self.items)
+     def __repr__(self):
+         return str(self.items)
 
 class Iterator:
     def __init__(self, values):
