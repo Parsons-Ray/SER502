@@ -81,7 +81,9 @@ def parseSDK(input):
     actualParameter = pp.Or(numericLiteral ^ identifier ^ expr)
     functionCallExpression = identifier + lBracs + actualParameter + rBracs
     functionCallStatement = functionCallExpression + eol
-    primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false") ^ functionCallExpression)
+    stackPushStatement = identifier + pp.Literal("->") + pp.Literal("push") + lBracs + numericLiteral + rBracs + eol
+    stackPopCall = identifier + pp.Literal("->") + pp.Literal("pop") + lBracs + rBracs
+    primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false") ^ functionCallExpression ^ stackPopCall)
     # Made Change here
     factor = pp.Or((primary + pp.Optional(pp.Literal("^") + primary)) ^ (notExpr + primary))
     term = factor + pp.ZeroOrMore(multiplyingOperator + factor)
@@ -92,7 +94,7 @@ def parseSDK(input):
     indexedComponent = pp.Literal("[") + (expr + pp.ZeroOrMore("," + expr)) + pp.Literal("]")
     name = pp.Or(identifier ^ indexedComponent)
     condition = expr
-    typeName = pp.Or(pp.Literal("integer") ^ pp.Literal("floating") ^ pp.Literal("boolean"))
+    typeName = pp.Or(pp.Literal("integer") ^ pp.Literal("floating") ^ pp.Literal("boolean") ^ pp.Literal("Stack"))
     ArrayTypeDefinition = pp.Literal("Array") + typeName + pp.Literal("[") + (
         size + pp.ZeroOrMore(pp.Literal(",") + size)) + pp.Literal("]")
     typeDefinition = pp.Or(typeName ^ ArrayTypeDefinition)
@@ -115,6 +117,7 @@ def parseSDK(input):
         "->") + typeDefinition + lBracs + pp.Optional(formalParameters) \
                             + rBracs + lcrBracs + pp.ZeroOrMore(pp.Or(simpleStatement ^ compoundStatement)) + rcrBracs
 
+
     sequenceOfStatements = pp.Forward()
     ifStatement = when + condition + lcrBracs + pp.ZeroOrMore(simpleStatement) + rcrBracs + \
                   pp.ZeroOrMore(elseWhen + condition + lcrBracs + simpleStatement + rcrBracs) + \
@@ -122,7 +125,7 @@ def parseSDK(input):
     loopStatement = loop + condition + lcrBracs + pp.ZeroOrMore(pp.Or(simpleStatement ^ compoundStatement ^ breakStatement)) + rcrBracs
     compoundStatement << pp.Or(loopStatement ^ ifStatement)
     simpleStatement << pp.Or(nullStatement ^ assignmentStatement ^ functionCallStatement ^ declarativeStatement ^
-                             printStatement ^ returnStatement)
+                             printStatement ^ returnStatement ^ stackPushStatement)
     statement = pp.Or(simpleStatement ^ functionSpecification ^ compoundStatement)
     sequenceOfStatements << pp.OneOrMore(statement)
     program = sequenceOfStatements
@@ -180,19 +183,23 @@ def assignStatement(preValue, assStatement):
     m = re.search(r"[a-zA-Z]*\([a-zA-Z0-9*+-/]*\)", rightSide)
     if m is not None:
         funcName = m.group()
-    rightSide = re.sub(r"[a-zA-Z]*\([a-zA-Z0-9*+-/]*\)", '@', rightSide)
-    postfixExpr = infixToPostfixConv(removeWhiteSpace(rightSide)).split()
-    for s in postfixExpr:
-        if isOperator(s):
-            if s == "@" and funcName is not None:
-                intermediateAssign += "CALL " + funcName.split("(")[0] + "\n"
-                for arg in funcName.split("(")[1].split(","):
-                    arg = re.sub(r"\)", '', arg)
-                    intermediateAssign += 'PAR ' + arg + '\n'
+    if funcName == 'pop()':
+        rightSide = re.sub(r"->pop\(\)", '', rightSide)
+        intermediateAssign += 'SDKPO' + rightSide + '\n'
+    else:
+        rightSide = re.sub(r"[a-zA-Z]*\([a-zA-Z0-9*+-/]*\)", '@', rightSide)
+        postfixExpr = infixToPostfixConv(removeWhiteSpace(rightSide)).split()
+        for s in postfixExpr:
+            if isOperator(s):
+                if s == "@" and funcName is not None:
+                    intermediateAssign += "CALL " + funcName.split("(")[0] + "\n"
+                    for arg in funcName.split("(")[1].split(","):
+                        arg = re.sub(r"\)", '', arg)
+                        intermediateAssign += 'PAR ' + arg + '\n'
+                else:
+                    intermediateAssign += returnIntermediateOperator(s) + "\n"
             else:
-                intermediateAssign += returnIntermediateOperator(s) + "\n"
-        else:
-            intermediateAssign += 'PUSH ' + s + "\n"
+                intermediateAssign += 'PUSH ' + s + "\n"
     intermediateAssign += 'EQL ' + preValue + '\n'
     intermediateAssign += 'ENDEX'
     return intermediateAssign
@@ -246,7 +253,16 @@ def varDeclaration(tokenizedInput, value):
                     nextValue = next(tokenizedInput)
             else:
                 nextValue = next(tokenizedInput)
-
+    elif value == "Stack":
+        nextValue = next(tokenizedInput)
+        while nextValue != '.':
+            if nextValue != ',':
+                intermediateOutput.append("TYP stack " + nextValue)
+                nextValue = next(tokenizedInput)
+                if nextValue == assign:
+                    raise Exception("Invalid Stack Declaration")
+            else:
+                nextValue = next(tokenizedInput)
     else:
         nextValue = next(tokenizedInput)
         while nextValue != ".":
@@ -317,6 +333,11 @@ def blockDeclaration(tokenizedInput, value):
             nextValue = next(tokenizedInput)
             rightSide = nextValue
             intermediateOutput += 'BREAK'
+        elif nextValue == "->":
+            nextValue = next(tokenizedInput)
+            if nextValue == 'push':
+                intermediateOutput += stackPush(tokenizedInput, nextValue, value).split("\n")
+            rightSide = nextValue
     # Return Error
     if prevElement != '}' and nextElement == '':
         if nextValue != "." and nextValue != '}':
@@ -605,6 +626,23 @@ def printStatement(tokenizedInput, value):
     intermediateOutput += "\nENDPRNT"
     return intermediateOutput
 
+def stackPush(tokenizedInput, nextVal, value):
+    # Eg : stackSample.push(5)
+    # Input :
+    # ['sampleStack', '.', 'push', '(', '5', ')', '.']
+    # Output :
+    # SDKPU sampleStack 5
+    intermediateOutput = ''
+    if nextVal == 'push':
+        next(tokenizedInput)
+        intermediateOutput = "SDKPU " + value + " " + next(tokenizedInput)
+        next(tokenizedInput)
+        nextVal = next(tokenizedInput)
+    if nextVal != '.':
+        raise Exception("Invalid Push Call")
+    return intermediateOutput
+
+
 # Process : Tokenized Parsed String to Assembly Conversion
 def convertTokens(tokenizedInput):
     # Building an Iterator on "result" variable
@@ -631,13 +669,19 @@ def convertTokens(tokenizedInput):
             else:
                 nextVal = value
                 rightSide = ''
-                if next(tokenizedInputIter) == ':=':
+                prevValue = next(tokenizedInputIter)
+                if prevValue == ':=':
                     nextVal = next(tokenizedInputIter)
                     while nextVal != eol:
                         rightSide += nextVal
                         nextVal = next(tokenizedInputIter)
-                assStatement = value + " = " + rightSide
-                tokenizedOutput.append(assignStatement(value, assStatement).split("\n"))
+                    assStatement = value + " = " + rightSide
+                    tokenizedOutput.append(assignStatement(value, assStatement).split("\n"))
+                elif prevValue == '->':
+                    nextVal = next(tokenizedInputIter)
+                    if nextVal == 'push':
+                        tokenizedOutput.append(stackPush(tokenizedInputIter, nextVal, value).split("\n"))
+
     return tokenizedOutput
 
 
@@ -661,7 +705,8 @@ def main():
 
     # Parse Input
     file = open('input.txt', 'r')
-    tokenizedInput = parseSDK(file.read())
+    #tokenizedInput = parseSDK(file.read())
+    tokenizedInput = parseSDK("integer a . Stack sampleStack . sampleStack->push(5) . a := sampleStack->pop() . print a .")
 
     # Initializing Label Handling Variables
     labelCounter = 0
@@ -672,14 +717,17 @@ def main():
     # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}
     # ['integer', 'a', ':=', '1', ',', 'b', ':=', '1', ',', 'counter', ':=', '0', '.', 'loop', '(', 'counter', '<', '5', ')', '{', 'integer', 'temp', ':=', 'a', '.', 'a', ':=', 'b', '.', 'b', ':=', 'temp', '+', 'b', '.', 'print', 'a', '.', 'counter', ':=', 'counter', '+', '1', '.', '}']
 
-    # Kevin's Factorial Program : int n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).
+    # Kevin's Factorial Program : integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).
     # ['integer', 'n', '.', 'function', 'fact', '->', 'integer', '(', 'integer', 'param', ')', '{', 'when', '(', 'param', '==', '1', ')', '{', 'return', 'param', '.', '}', 'integer', 'parMinOne', ':=', 'param', '-', '1', '.', 'integer', 'result', ':=', 'param', '*', 'fact', '(', 'parMinOne', ')', '.', 'return', 'result', '.', '}', 'n', ':=', 'fact', '(', '4', ')', '.']
+
+    # Digant's Stack Program : int a . Stack sampleStack . sampleStack->push(5) . a := sampleStack->pop() . print a .
+    #     ['integer', 'a', '.', 'Stack', 'sampleStack', '.', 'sampleStack', '->', 'push', '(', '5', ')', '.', 'a', ':=', 'sampleStack', '->', 'pop', '(', ')', '.', 'print', '1', '.']
 
 
     # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
     # Input's been tokenized based on Grammar Rules
     # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
-    # print tokenizedInput
+    print tokenizedInput
     # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
     # Sample Exception handling
     # raise Exception('Incorrect data')
@@ -688,7 +736,7 @@ def main():
     print 'Reading file : Compiler/input.txt'
     print 'Input : '
     file = open('input.txt', 'r')
-    print file.read()
+    # print file.read()
     print 'Converting to Intermediate...'
     print 'Reading intermediate.sdk...'
     print 'Output : '
