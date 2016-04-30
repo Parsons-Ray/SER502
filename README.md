@@ -1,5 +1,5 @@
 ## SER 502 - Project 2  
-This is the repository for SER 502 Project 2.  
+This is the repository for **SER 502 Project 2 | Group 13.**  
 
 The team members are  
 
