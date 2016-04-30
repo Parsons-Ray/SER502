@@ -4,7 +4,6 @@ import os
 import re
 import sys
 from Stack import Stack
-from pprint import pprint
 from InfixToPostfix import infixToPostfixConv, isOperator
 
 
@@ -75,7 +74,6 @@ def parseSDK(input):
     relationalOperator = pp.Or(
         pp.Literal("==") ^ pp.Literal("!=") ^ pp.Literal("<") ^ pp.Literal(">") ^ pp.Literal("<=") ^ pp.Literal(">="))
     multiplyingOperator = pp.Or(pp.Literal("*") ^ pp.Literal("/"))
-    # Made Change here
     simpleStatement = pp.Forward()
     compoundStatement = pp.Forward()
     expr = pp.Forward()
@@ -85,12 +83,10 @@ def parseSDK(input):
     stackPushStatement = identifier + pp.Literal("->") + pp.Literal("push") + lBracs + numericLiteral + rBracs + eol
     stackPopCall = identifier + pp.Literal("->") + pp.Literal("pop") + lBracs + rBracs
     primary = pp.Or(numericLiteral ^ stringLiteral ^ pp.Literal("true") ^ pp.Literal("false") ^ functionCallExpression ^ stackPopCall)
-    # Made Change here
     factor = pp.Or((primary + pp.Optional(pp.Literal("^") + primary)) ^ (notExpr + primary))
     term = factor + pp.ZeroOrMore(multiplyingOperator + factor)
     simpleExpression = pp.Optional(unaryAddingOperator) + term + pp.ZeroOrMore(binaryAddingOperator + term)
     relation = pp.ZeroOrMore(lBracs) + simpleExpression + pp.ZeroOrMore(relationalOperator + simpleExpression) + pp.ZeroOrMore(rBracs)
-    # Changed this part due to error scenario : + pp.ZeroOrMore(pp.Or((pp.Literal(",") + simpleExpression) ^ (relationalOperator + simpleExpression)))
     expr << relation + pp.ZeroOrMore(pp.Or((andExpr + relation)) ^ (orExpr + relation))
     indexedComponent = pp.Literal("[") + (expr + pp.ZeroOrMore("," + expr)) + pp.Literal("]")
     name = pp.Or(identifier ^ indexedComponent)
@@ -108,7 +104,6 @@ def parseSDK(input):
 
     declarativeStatement = typeDefinition + identifier + pp.Optional(assign + expr) \
                            + pp.ZeroOrMore(pp.Literal(",") + identifier + pp.Optional(assign + relation)) + eol
-    # + pp.ZeroOrMore(pp.Literal(",") + identifier + pp.Optional(assign + expr))
 
     assignmentStatement = identifier + pp.Optional(lsqBracs + numericLiteral + rsqBracs) + assign + expr + eol
 
@@ -342,8 +337,6 @@ def blockDeclaration(tokenizedInput, value):
     # Return Error
     if prevElement != '}' and nextElement == '':
         if nextValue != "." and nextValue != '}':
-        # print intermediateOutput
-        #print next(tokenizedInput)
             intermediateOutput = "SDK ERROR : Next Value = " + rightSide
 
     return intermediateOutput
@@ -438,10 +431,8 @@ def whenCondition(tokenizedInput, value):
     # print condition
     condition = re.sub(r'==', '@', condition)
     condition = re.sub(r'&&', '%', condition)
-    #condition = re.sub(r'||', '^', condition)
     postfixExpr = infixToPostfixConv(removeWhiteSpace(condition))
     postfixExpr = re.sub(r'@', '==', postfixExpr)
-    #postfixExpr = re.sub(r'$', '||', postfixExpr)
     intermediateAssign += "STRTEX" + "\n"
     for s in postfixExpr.split():
         if isOperator(s):
@@ -717,8 +708,6 @@ def main():
     print 'Input : '
     file = open(sys.argv[1], 'r')
     print file.read()
-
-    # print file.read()
 
     print 'Converting to Intermediate...'
     print 'Reading intermediate.sdk...'
