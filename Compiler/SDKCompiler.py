@@ -179,6 +179,8 @@ def assignStatement(preValue, assStatement):
     m = re.search(r"[a-zA-Z]*\([a-zA-Z0-9*+-/]*\)", rightSide)
     if m is not None:
         funcName = m.group()
+    else:
+        funcName = ''
     if funcName == 'pop()':
         rightSide = re.sub(r"->pop\(\)", '', rightSide)
         intermediateAssign += 'SDKPO' + rightSide + '\n'
