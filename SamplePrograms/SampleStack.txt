@@ -1,0 +1,5 @@
+integer a .
+Stack sampleStack .
+sampleStack->push(6) .
+a := sampleStack->pop() .
+print a .

@@ -708,34 +708,11 @@ def main():
     file = open(sys.argv[1], 'r')
     tokenizedInput = parseSDK(file.read())
 
-    #tokenizedInput = parseSDK(file.read())
-    #tokenizedInput = parseSDK("integer a . Stack sampleStack . sampleStack->push(5) . a := sampleStack->pop() . print a .")
-
     # Initializing Label Handling Variables
     labelCounter = 0
     labelsStack = Stack()
-
-    # tokenizedInput = parseSDK("integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).")
-
-    # Shashank Fibo Program : integer a := 1, b := 1, counter := 0. loop (counter < 5){ integer temp := a . a := b . b := temp + b . print a . counter := counter + 1 .}
-    # ['integer', 'a', ':=', '1', ',', 'b', ':=', '1', ',', 'counter', ':=', '0', '.', 'loop', '(', 'counter', '<', '5', ')', '{', 'integer', 'temp', ':=', 'a', '.', 'a', ':=', 'b', '.', 'b', ':=', 'temp', '+', 'b', '.', 'print', 'a', '.', 'counter', ':=', 'counter', '+', '1', '.', '}']
-
-    # Kevin's Factorial Program : integer n . function fact -> integer( integer param ) { when(param == 1) { return param. } integer parMinOne := param - 1. integer result := param * fact(parMinOne). return result. } n := fact(4).
-    # ['integer', 'n', '.', 'function', 'fact', '->', 'integer', '(', 'integer', 'param', ')', '{', 'when', '(', 'param', '==', '1', ')', '{', 'return', 'param', '.', '}', 'integer', 'parMinOne', ':=', 'param', '-', '1', '.', 'integer', 'result', ':=', 'param', '*', 'fact', '(', 'parMinOne', ')', '.', 'return', 'result', '.', '}', 'n', ':=', 'fact', '(', '4', ')', '.']
-
-    # Digant's Stack Program : int a . Stack sampleStack . sampleStack->push(5) . a := sampleStack->pop() . print a .
-    #     ['integer', 'a', '.', 'Stack', 'sampleStack', '.', 'sampleStack', '->', 'push', '(', '5', ')', '.', 'a', ':=', 'sampleStack', '->', 'pop', '(', ')', '.', 'print', '1', '.']
-
-
-    # when(a < 10){ integer a. } else when (a == b){  integer f. } else{ integer g. } ")
-    # Input's been tokenized based on Grammar Rules
-    # result = program.parseString("function factorial -> integer ( integer fact ) { \n integer factVal . \n factVal := fact * factorial ( fact - 1 ) . \n  return factVal .}")
     print tokenizedInput
-    # ['function', 'sampleFunction', '->', 'integer', '(', 'integer', 'fact', ')', '{', 'integer', 'factVal', '.', 'factVal', ':=', 'fact', '*', 'factorial', '(', 'fact', '-', '1', ')', '.', 'return', 'factVal', '.', '}']
-    # Sample Exception handling
-    # raise Exception('Incorrect data')
-    # print tokenizedInput
-    # Writing TokenizedOutput to file
+
     print 'Reading file : ' + str(sys.argv[1])
     print 'Input : '
     file = open(sys.argv[1], 'r')
