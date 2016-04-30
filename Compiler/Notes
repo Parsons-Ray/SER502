@@ -1,1 +1,0 @@
-functionSpecification -> "function" identifier "->" typeDefinition (" formalParameters ")" "{" sequenceOfStatements "}"

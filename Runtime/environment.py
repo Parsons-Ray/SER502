@@ -266,7 +266,7 @@ def WHEN():
 def WLEND():
     while tokens.current() != "ENDW":
         tokens.next()
-    dict_of_symbolTabs[current_scope].emptyTable()
+    #dict_of_symbolTabs[current_scope].emptyTable()
 
 def LOOPLEND():
     global current_scope
@@ -321,7 +321,7 @@ def main():
         elif nextToken == "JEQ":
             JEQ()
 
-        elif nextToken == "LEND"+current_scope[-1:] :
+        elif nextToken == "LEND"+current_scope[-1:]:
             WLEND()
         elif nextToken == "LOOPLEND"+current_scope[-1:]:
             LOOPLEND()
